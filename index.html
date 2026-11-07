@@ -56,6 +56,8 @@ svg.i{width:18px;height:18px;flex:none}
 .tier{display:inline-flex;align-items:center;font-family:var(--f-disp);font-weight:700;font-size:11.5px;border-radius:var(--pill);padding:3px 9px;white-space:nowrap}
 .t4{background:var(--warn-tint);color:var(--warn)} .t3{background:var(--sec-tint);color:var(--sec)} .t2{background:var(--sec-tint);color:var(--sec)} .t1{background:var(--surface-2);color:var(--muted)}
 .av{display:inline-grid;place-items:center;border-radius:50%;font-family:var(--f-disp);font-weight:700;flex:none;background:var(--sec-tint);color:var(--sec)}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}.av.pic{background:none;overflow:visible}
+.avgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;max-width:640px}.avgrid button{padding:0;border:0;background:none;border-radius:50%;cursor:pointer;aspect-ratio:1;box-shadow:0 0 0 2px transparent;transition:box-shadow .15s,transform .15s}.avgrid button:hover{transform:translateY(-2px)}.avgrid button[aria-checked=true]{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--sec)}.avgrid img{width:100%;height:100%;border-radius:50%;display:block}@media (max-width:560px){.avgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .av.ring4{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t4)} .av.ring3{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t3)} .av.ring2{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t2)} .av.ring1{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t1)}
 .tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;border-radius:var(--pill);padding:3px 10px;background:var(--surface-2);color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tag svg{width:14px;height:14px;flex:none}
@@ -436,6 +438,12 @@ function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.M&&s.W
 function save(){try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(_){}}
 let ST=load(),M=ST.M,W=ST.W,override=null,loadedToday=false,lastOnbStep=-1,authStep={mode:"login",phase:"form",email:"",name:"",org:"",err:{}};
 const first=()=>ST.user?ST.user.name.split(" ")[0]:"there";
+const MAV={harold:"e1",evelyn:"e4",walter:"e7",rosa:"e8",linda:"e6"};
+const AVS=["z5","y1","y3","z1","z2","z4","y7","z8","y5","z6","z7","y6","y2","y4","y8","z3"];
+const avSrc=k=>`img/av/${k}.webp`;
+const mAv=(id,m)=>MAV[id]?`<img src="${avSrc(MAV[id])}" alt="" loading="lazy">`:initials(m.name);
+const mAvCls=id=>MAV[id]?" pic":"";
+const uAv=u=>u&&u.av!=="none"?`<img src="${avSrc((u&&u.av)||"z5")}" alt="">`:esc(initials(u&&u.name));
 const initials=n=>(n||"?").split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
 const ROLES=[["rn","RN case manager",I.heart],["sup","Supervisor",I.users],["lpn","LPN / social worker",I.doc],["chw","Community health worker",I.home],["qa","Compliance",I.shield]];
 const ROLE=r=>(ROLES.find(x=>x[0]===r)||["","Team member"])[1];
@@ -496,7 +504,7 @@ window.addEventListener("resize",()=>{if(!$("#app").hidden)applyRail()});
 function renderApp(v){
  applyRail();
  $("#sideNav").innerHTML=NAV.map(n=>`<a class="nav-item" href="#${n[0]}" aria-current="${v===n[0]?"page":"false"}" title="${n[1]}">${n[2]}<span>${n[1]}</span></a>`).join("");
- $("#sideAv").textContent=$("#topAvTxt").textContent=initials(ST.user.name);$("#sideName").textContent=ST.user.name;$("#sideRole").textContent=ROLE(ST.onb.role);
+ $("#sideAv").innerHTML=$("#topAvTxt").innerHTML=uAv(ST.user);$("#sideAv").classList.add("pic");$("#topAvTxt").classList.add("pic");$("#sideName").textContent=ST.user.name;$("#sideRole").textContent=ROLE(ST.onb.role);
  $("#vTitle").textContent=TITLES[v];renderSrcPill();
  APP.forEach(x=>{$("#v-"+x).hidden=x!==v});
  if(v!==lastView){const el=$("#v-"+v);el.classList.remove("enter");void el.offsetWidth;el.classList.add("enter")}
@@ -510,7 +518,7 @@ function openLayer(html,cls,pos){lastFocus=document.activeElement;const L=$("#la
 function closeLayer(){const L=$("#layer");if(L.hidden)return;L.hidden=true;L.innerHTML="";lastFocus&&lastFocus.focus&&lastFocus.focus()}
 function openProfile(anchor){const u=ST.user,O=ST.onb,r=anchor.getBoundingClientRect();
  const pos=r.top>innerHeight/2?`left:${Math.max(12,r.left)}px;bottom:${innerHeight-r.top+8}px`:`right:12px;top:${r.bottom+8}px`;
- openLayer(`<div class="prof-head"><span class="av">${esc(initials(u.name))}</span><div><h2 id="layerT" style="font-size:17px">${esc(u.name)}</h2><p class="muted small" style="overflow-wrap:anywhere">${esc(u.email)}</p></div></div>
+ openLayer(`<div class="prof-head"><span class="av pic">${uAv(u)}</span><div><h2 id="layerT" style="font-size:17px">${esc(u.name)}</h2><p class="muted small" style="overflow-wrap:anywhere">${esc(u.email)}</p></div></div>
  <dl class="kv"><dt>Role</dt><dd>${esc(ROLE(O.role))}</dd><dt>Plan</dt><dd>${esc(u.org)}</dd><dt>Program</dt><dd>${esc(O.program)}</dd><dt>Caseload</dt><dd>${O.caseload} members</dd><dt>Capacity</dt><dd>${O.cap} talks a day</dd><dt>Sign-in</dt><dd>${u.via==="google"?"Google":"Email code"}</dd></dl>
  <div style="display:flex;gap:8px"><button class="btn btn-sec" data-act="to-profile">Edit profile</button><button class="btn btn-ghost" data-act="logout">${I.out}Sign out</button></div>`,"pop-panel",pos)}
 function sheetSources(){openLayer(`<div style="display:flex;justify-content:space-between;align-items:center"><h2 id="layerT" style="font-size:18px">Data sources</h2><button class="ib" data-act="layer-close" aria-label="Close">${I.x}</button></div>
@@ -530,13 +538,13 @@ function renderQueue(){const q=$("#queue");if(!q)return;const cap=ST.onb.cap,act
  if(!active.length)h+=`<div class="empty">${I.check}<b>All clear</b><span class="small">Deferred items move up tomorrow.</span></div>`;
  active.forEach(id=>{const m=M[id];n++;if(n===cap+1)h+=`<div class="divider">Later</div>`;
   h+=`<div class="qrow" role="button" tabindex="0" data-act="pick" data-id="${id}" aria-current="${W.sel===id}"><span class="num">${n}</span>
-  <span style="display:flex;gap:10px;align-items:center;min-width:0"><span class="av ring${tierN(m)}" aria-hidden="true">${initials(m.name)}</span><span style="min-width:0;flex:1"><span class="nm"><b>${esc(m.name)}</b></span><span class="tags">${m.qchips.slice(0,1).map(c=>`<span class="tag ${c[1]}" title="${esc(c[0])}">${qIcon[c[1]]||""}${esc(c[0])}</span>`).join("")}</span></span></span>
+  <span style="display:flex;gap:10px;align-items:center;min-width:0"><span class="av ring${tierN(m)}${mAvCls(id)}" aria-hidden="true">${mAv(id,m)}</span><span style="min-width:0;flex:1"><span class="nm"><b>${esc(m.name)}</b></span><span class="tags">${m.qchips.slice(0,1).map(c=>`<span class="tag ${c[1]}" title="${esc(c[0])}">${qIcon[c[1]]||""}${esc(c[0])}</span>`).join("")}</span></span></span>
   <span class="qmove"><button data-act="mv" data-id="${id}" data-d="-1" aria-label="Move ${esc(m.name)} up">▲</button><button data-act="mv" data-id="${id}" data-d="1" aria-label="Move ${esc(m.name)} down">▼</button></span>
   ${W.moved[id]?`<span class="moved">Moved · ${esc(W.moved[id])}</span>`:""}
   ${override&&override.id===id?`<div class="override"><label class="vh" for="ovr">Reason</label><select id="ovr"><option value="">Why move?</option><option>Clinical judgment</option><option>Member asked for a time</option><option>New information</option><option>Workload</option></select><button class="btn btn-pri btn-sm" data-act="mv-ok">Move</button><button class="btn btn-text btn-sm" data-act="mv-cancel">Cancel</button></div>`:""}</div>`});
  if(active.length&&active.length<=cap)h+=`<div class="divider">Later</div>`;
  h+=`<button class="tag" style="align-self:flex-start;border:0;cursor:pointer;margin:2px 4px" data-act="note" data-t="12 routine follow-ups deferred to Tue, each with its risk">${I.clock}12 deferred to Tue</button>`;
- if(done.length)h+=`<div class="divider">Done</div>`+done.map(id=>`<div class="qrow done" role="button" tabindex="0" data-act="pick" data-id="${id}" aria-current="${W.sel===id}"><span class="num">✓</span><span style="display:flex;gap:10px;align-items:center"><span class="av">${initials(M[id].name)}</span><b>${esc(M[id].name)}</b></span><span></span></div>`).join("");
+ if(done.length)h+=`<div class="divider">Done</div>`+done.map(id=>`<div class="qrow done" role="button" tabindex="0" data-act="pick" data-id="${id}" aria-current="${W.sel===id}"><span class="num">✓</span><span style="display:flex;gap:10px;align-items:center"><span class="av${mAvCls(id)}">${mAv(id,M[id])}</span><b>${esc(M[id].name)}</b></span><span></span></div>`).join("");
  q.innerHTML=h}
 const WHEN={harold:"Discharged Fri",evelyn:"Home from rehab Fri",walter:"ED visit Sat",rosa:"Monthly contact due",linda:"Stable 11 months"};
 const cap1=s=>s.charAt(0).toUpperCase()+s.slice(1);
@@ -569,7 +577,7 @@ function attestTab(id){const m=M[id],a=W.attest[id]||(W.attest[id]={});let h="";
 function signWhy(id){const m=M[id],a=W.attest[id]||{},w=[];if(m.meds){const n=m.meds.filter(x=>!x.agree&&!x.dec).length;if(n)w.push(`${n} medicine${n>1?"s":""} open`)}if(m.dup&&!m.dup.dec)w.push("record check");const n=areaList(m).length;let miss=0;for(let i=0;i<n;i++)if(!a[i]||a[i].trim().length<8)miss++;if(miss)w.push(`${miss} conclusion${miss>1?"s":""} to write`);return w}
 function renderSign(id){const b=$("#signbar");if(!b)return;if(W.done[id]){b.innerHTML=`<span class="st ok">${I.check}Signed ${esc(W.done[id])}</span>`;return}const w=signWhy(id);b.innerHTML=`<span class="st ${w.length?"no":"ok"}">${w.length?I.alert+esc(w.join(" · ")):I.check+"Ready to sign"}</span><button class="btn btn-pri" data-act="sign" data-id="${id}" ${w.length?"disabled":""}>${I.sign}Sign</button>`}
 function renderWS(){const ws=$("#ws");if(!ws)return;const id=W.sel,m=M[id];
- ws.innerHTML=`<div class="ws-h"><span class="av ring${tierN(m)}">${initials(m.name)}</span><div style="flex:1;min-width:0"><h2>${esc(m.name)}, ${m.age}</h2><div class="sub"><span class="tier t${tierN(m)}">Tier ${esc(m.tier)}</span><span class="tag">${esc(m.mid)}</span>${m.lang!=="English"?`<span class="tag i">${I.globe}${esc(m.lang)}</span>`:""}<span class="tag" title="${esc(m.window)}">${I.clock}${esc(W.lindaUp&&id==="linda"?"Fall reported Tue":WHEN[id])}</span></div></div></div>
+ ws.innerHTML=`<div class="ws-h"><span class="av ring${tierN(m)}${mAvCls(id)}">${mAv(id,m)}</span><div style="flex:1;min-width:0"><h2>${esc(m.name)}, ${m.age}</h2><div class="sub"><span class="tier t${tierN(m)}">Tier ${esc(m.tier)}</span><span class="tag">${esc(m.mid)}</span>${m.lang!=="English"?`<span class="tag i">${I.globe}${esc(m.lang)}</span>`:""}<span class="tag" title="${esc(m.window)}">${I.clock}${esc(W.lindaUp&&id==="linda"?"Fall reported Tue":WHEN[id])}</span></div></div></div>
  <div class="tabs" role="tablist"><button role="tab" aria-selected="${W.sub==="brief"}" data-act="sub" data-s="brief">${I.brief}Brief</button><button role="tab" aria-selected="${W.sub==="attest"}" data-act="sub" data-s="attest">${I.sign}Attest${W.done[id]?" ✓":""}</button><button role="tab" aria-selected="${W.sub==="ask"}" data-act="sub" data-s="ask">${I.chat}Ask</button></div>
  <div class="ws-b">${W.sub==="brief"?briefTab(id):W.sub==="ask"?askTab(id):attestTab(id)}</div>`;if(W.sub==="attest")renderSign(id)}
 function sel(id,sub){W.sel=id;W.sub=sub||"brief";save();renderQueue();renderWS();if(innerWidth<980){const ws=$("#ws");ws&&ws.scrollIntoView({behavior:reduce()?"auto":"smooth",block:"start"})}}
@@ -602,7 +610,7 @@ function ask(id,q){q=q.trim();if(!q)return;const c=(W.chat||(W.chat={}))[id]||(W
 function renderCase(){$("#v-caseload").innerHTML=`<div class="tiers">${[["4","Transition",6,"t4c"],["3","High",42,"t3c"],["2","Rising",0,""],["1","Stable",0,""],["0","Unknown",0,""]].map(t=>`<div class="tcard ${t[3]}"><span>Tier ${t[0]} · ${t[1]}</span><b>${t[0]==="4"?Object.values(M).filter(m=>tierN(m)==="4").length:t[0]==="3"?ST.onb.caseload-Object.values(M).filter(m=>tierN(m)==="4").length:"—"}</b><span>${t[0]>="3"?"Your nurses":t[0]==="2"?"LPN / social work":t[0]==="1"?"AI reminders":"HRA outreach"}</span></div>`).join("")}</div>
  <div class="panel"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h2>Members in this demo</h2><label class="vh" for="csearch">Search</label><input class="search" id="csearch" type="search" placeholder="Search name or ID"></div><div class="mlist" id="mlist"></div></div>`;drawCase("")}
 function drawCase(q){const rows=Object.entries(M).filter(([id,m])=>!q||(m.name+" "+m.mid).toLowerCase().includes(q.toLowerCase()));
- $("#mlist").innerHTML=rows.length?rows.map(([id,m])=>`<div class="mrow"><span class="av ring${tierN(m)}">${initials(m.name)}</span><span style="min-width:0"><b>${esc(m.name)}</b><br><span class="muted small">${esc(m.mid)}</span></span><span class="tier t${tierN(m)}">Tier ${esc(m.tier)}</span>${W.done[id]?`<span class="tag ok">${I.check}Signed</span>`:`<a class="btn btn-ghost btn-sm" href="#today" data-act="open-member" data-id="${id}">Open</a>`}</div>`).join(""):`<div class="empty">${I.users}<span>No match for “${esc(q)}”</span></div>`}
+ $("#mlist").innerHTML=rows.length?rows.map(([id,m])=>`<div class="mrow"><span class="av ring${tierN(m)}${mAvCls(id)}">${mAv(id,m)}</span><span style="min-width:0"><b>${esc(m.name)}</b><br><span class="muted small">${esc(m.mid)}</span></span><span class="tier t${tierN(m)}">Tier ${esc(m.tier)}</span>${W.done[id]?`<span class="tag ok">${I.check}Signed</span>`:`<a class="btn btn-ghost btn-sm" href="#today" data-act="open-member" data-id="${id}">Open</a>`}</div>`).join(""):`<div class="empty">${I.users}<span>No match for “${esc(q)}”</span></div>`}
 
 /* ---------- AI LANE ---------- */
 const CALL=[["ai","Hi, this is an automated assistant for your plan’s care team. Say “nurse” anytime."],["ai","Am I speaking with Linda Carter?"],["mem","Yes."],["ai","Your metformin refill is due. Say “refill” or press 1."],["mem","I can’t get to the pharmacy. I fell last night."],["sys","Red flag: “fell” → transferring to a nurse"],["sys ok","Nurse answered in 40 s · Linda → Tier 4"]];
@@ -615,8 +623,9 @@ function renderCall(){const tr=$("#transcript");if(!tr)return;
  if(W.aiStep>=CALL.length&&!W.lindaUp){W.lindaUp=true;const m=M.linda;Object.assign(m,{tier:"4",tc:"t4",review:false,qchips:[["Fall on AI call","w"],["Nurse in 40 s","i"]],window:"Tue 10:32 · fall reported on AI call",nba:"Assess the fall → same-day PCP or urgent care → home-safety check"});m.fresh.unshift(["AI call","Tue 10:32","ok"]);W.queue=["linda"].concat(W.queue.filter(x=>x!=="linda"));delete W.done.linda;log("linda","AI","Red flag “fell”; warm transfer");buzz(15);toast("Linda moved to Tier 4, top of your queue")}save()}
 
 /* ---------- PROFILE ---------- */
-function renderProfile(){const u=ST.user,O=ST.onb;$("#v-profile").innerHTML=`<div class="panel"><div class="prof-head"><span class="av">${esc(initials(u.name))}</span><div><h2 style="font-size:20px">${esc(u.name)}</h2><p class="muted" style="overflow-wrap:anywhere">${esc(u.email)}</p></div></div>
+function renderProfile(){const u=ST.user,O=ST.onb;$("#v-profile").innerHTML=`<div class="panel"><div class="prof-head"><span class="av pic">${uAv(u)}</span><div><h2 style="font-size:20px">${esc(u.name)}</h2><p class="muted" style="overflow-wrap:anywhere">${esc(u.email)}</p></div></div>
  <dl class="kv"><dt>Role</dt><dd>${esc(ROLE(O.role))}</dd><dt>Health plan</dt><dd>${esc(u.org)}</dd><dt>Program</dt><dd>${esc(O.program)}</dd><dt>Caseload</dt><dd>${O.caseload} members</dd><dt>Signed in with</dt><dd>${u.via==="google"?"Google":"Email code"}</dd><dt>Member since</dt><dd>${esc(u.since||"Nov 2026")}</dd></dl></div>
+ <div class="panel"><h2>Profile picture</h2><p class="muted small" style="margin:0 0 10px">Pick an avatar. It shows in the sidebar, the top bar and your profile.</p><div class="avgrid" role="radiogroup" aria-label="Profile picture">${AVS.map(k=>`<button role="radio" aria-checked="${(u.av||"z5")===k}" data-act="pick-av" data-v="${k}" aria-label="Avatar ${k}"><img src="${avSrc(k)}" alt="" loading="lazy"></button>`).join("")}</div></div>
  <div class="panel"><h2>Name</h2><form id="pform" novalidate style="display:flex;gap:8px;flex-wrap:wrap"><label class="vh" for="pname">Display name</label><input id="pname" class="search" style="max-width:320px" value="${esc(u.name)}" autocomplete="name"><button class="btn btn-sec" type="submit">Save</button></form></div>
  <div class="panel"><h2>Conversations a day</h2><div class="cap" role="radiogroup" aria-label="Conversations per day">${[2,3,4,5,6].map(n=>`<button role="radio" aria-checked="${O.cap===n}" data-act="pcap" data-v="${n}">${n}</button>`).join("")}</div></div>
  <div class="panel"><h2>Demo</h2><div class="tags"><button class="btn btn-ghost" data-act="replay-onb">Replay setup</button><button class="btn btn-ghost" data-act="reset-demo">Reset members</button><button class="btn btn-ghost" data-act="logout">${I.out}Sign out</button></div></div>`}
@@ -639,6 +648,7 @@ document.addEventListener("click",e=>{
  switch(a){
  case "layer-close":closeLayer();break;
  case "to-profile":closeLayer();go("profile");break;
+ case "pick-av":ST.user.av=t.dataset.v;save();renderApp("profile");toast("Profile picture updated");break;
  case "google":authStep.phase="google";authStep.err={};renderAuth();break;
  case "auth-back":authStep.phase="form";authStep.err={};renderAuth();break;
  case "role":ST.onb.role=t.dataset.v;save();document.querySelectorAll('[data-act="role"]').forEach(b=>b.setAttribute("aria-checked",b.dataset.v===ST.onb.role));onbNextState();break;
