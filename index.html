@@ -1,0 +1,692 @@
+<title>Case Workbench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Outfit:wght@400;600&display=swap">
+<style>
+/* Layout: white sign-in → 5-step setup → app with a light side panel (full ≥1200px, icon rail below) and a calm two-pane Today view.
+   70-30-10: 70% white/neutral · 30% navy secondary (nav icons, headers, secondary buttons) · 10% blue accent (main action, active state). Light mode only. */
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F5F7FB; --line:#E5EAF1; --ink:#172036; --muted:#66708A;
+  --sec:#2E4A86; --sec-tint:#EEF3FB; --sec-tint-2:#DCE6F7; --on-sec:#FFFFFF;
+  --accent:#2069F0; --accent-deep:#144CB8; --accent-tint:#E8F0FE; --on-accent:#FFFFFF;
+  --ok:#1C8A55; --ok-tint:#E5F5EC; --warn:#A14A06; --warn-tint:#FFF3E3; --warn-line:#F2A65A; --bad:#C2412F; --bad-tint:#FDE9E6;
+  --t4:#F6A04D; --t3:#2E4A86; --t2:#8FB0E6; --t1:#C9D3E3;
+  --shadow:0 1px 2px rgba(23,32,54,.05),0 8px 24px rgba(23,32,54,.06);
+  --f-disp:'Montserrat','Outfit',system-ui,Arial,sans-serif; --f-ui:'Outfit',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --pill:999px;
+  --t-fast:150ms; --t-med:220ms; --t-slow:400ms; --ease:cubic-bezier(.2,.7,.2,1); --glide:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);height:100%}
+body{color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+h1,h2,h3,h4{font-family:var(--f-disp);margin:0;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.muted{color:var(--muted)} .small{font-size:13px} .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:18px;height:18px;flex:none}
+
+/* buttons */
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 16px;border-radius:var(--r-sm);border:1.5px solid transparent;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;text-decoration:none;transition:transform var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease),background var(--t-fast)}
+.btn-pri{background:var(--accent);color:var(--on-accent);box-shadow:0 3px 0 var(--accent-deep)}
+.btn-pri:active{transform:translateY(2px);box-shadow:0 1px 0 var(--accent-deep)}
+.btn-sec{background:var(--sec-tint);color:var(--sec);box-shadow:0 2px 0 var(--sec-tint-2)}
+.btn-sec:active{transform:translateY(2px);box-shadow:none}
+.btn-ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--sec)}
+.btn-text{background:none;color:var(--sec);padding-inline:6px}
+.btn-sm{min-height:34px;padding:5px 11px;font-size:13px}
+.btn-lg{min-height:48px;padding:11px 20px;font-size:15.5px}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important}
+.ib{position:relative;overflow:hidden;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--sec);cursor:pointer}
+.ib:hover{border-color:var(--sec)}
+.rip{position:absolute;border-radius:50%;background:currentColor;opacity:.16;transform:scale(0);pointer-events:none;animation:rip 550ms var(--glide) forwards}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+.pop{animation:pop 420ms var(--spring)} @keyframes pop{0%{transform:scale(.94)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+.enter{animation:rise var(--t-slow) var(--ease) both} @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.spin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--sec-tint-2);border-top-color:var(--accent);animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* small atoms */
+.tier{display:inline-flex;align-items:center;font-family:var(--f-disp);font-weight:700;font-size:11.5px;border-radius:var(--pill);padding:3px 9px;white-space:nowrap}
+.t4{background:var(--warn-tint);color:var(--warn)} .t3{background:var(--sec-tint);color:var(--sec)} .t2{background:var(--sec-tint);color:var(--sec)} .t1{background:var(--surface-2);color:var(--muted)}
+.av{display:inline-grid;place-items:center;border-radius:50%;font-family:var(--f-disp);font-weight:700;flex:none;background:var(--sec-tint);color:var(--sec)}
+.av.ring4{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t4)} .av.ring3{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t3)} .av.ring2{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t2)} .av.ring1{box-shadow:0 0 0 2.5px var(--surface),0 0 0 4.5px var(--t1)}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;border-radius:var(--pill);padding:3px 10px;background:var(--surface-2);color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag svg{width:14px;height:14px;flex:none}
+.tag.w{background:var(--warn-tint);color:var(--warn)} .tag.i{background:var(--sec-tint);color:var(--sec)} .tag.ok{background:var(--ok-tint);color:var(--ok)} .tag.bad{background:var(--bad-tint);color:var(--bad)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ok)} .dot.w{background:var(--warn-line)} .dot.bad{background:var(--bad)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.lbl{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ===== auth ===== */
+.auth{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+.auth-top{display:flex;justify-content:space-between;align-items:center;min-height:68px;max-width:1180px;width:100%;margin:0 auto}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-disp);font-weight:700;font-size:16px;color:var(--ink);text-decoration:none}
+.logo i{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:10px;background:var(--sec);color:var(--on-sec);font-style:normal}
+.logo i svg{width:18px;height:18px}
+.auth-main{flex:1;display:grid;place-items:center;padding-block:16px 56px}
+.acard{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+.acard h1{font-size:26px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;font-size:14px}
+.field input,.field select{min-height:46px;border:1.5px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;background:var(--surface)}
+.field input:focus,.field select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-tint)}
+.field input[aria-invalid="true"]{border-color:var(--bad)}
+.field .err{font-size:13px;color:var(--bad);font-weight:600}
+.field .help{font-size:12.5px;color:var(--muted)}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}
+.or::before,.or::after{content:"";flex:1;border-top:1px solid var(--line)}
+.gbtn{background:var(--surface);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 2px 0 var(--line)}
+.gmark{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--sec-tint);color:var(--sec);font-family:var(--f-disp);font-weight:700;font-size:12px}
+.demo{background:var(--warn-tint);color:var(--warn);border-radius:var(--r-sm);padding:9px 12px;font-size:13px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check input{width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex:none}
+.code{letter-spacing:.4em;font-size:22px;text-align:center;font-family:var(--f-disp)}
+
+/* ===== onboarding ===== */
+.onb{max-width:620px;margin:0 auto;padding-block:24px 56px;display:flex;flex-direction:column;gap:18px}
+.onb-top{display:flex;justify-content:space-between;align-items:center}
+.prog{display:flex;gap:6px}
+.prog span{flex:1;height:6px;border-radius:6px;background:var(--surface-2);transition:background var(--t-med)}
+.prog span.on{background:var(--accent)}
+.ocard{display:flex;flex-direction:column;gap:18px;padding-block:8px}
+.ocard h1{font-size:26px}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.opt{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-md);padding:14px;cursor:pointer;min-height:96px}
+.opt svg{width:26px;height:26px;color:var(--sec)}
+.opt b{font-size:14.5px}
+.opt[aria-checked="true"]{border-color:var(--accent);background:var(--accent-tint)}
+.opt[aria-checked="true"] svg{color:var(--accent)}
+.cap{display:flex;gap:10px;flex-wrap:wrap}
+.cap button{position:relative;overflow:hidden;width:64px;height:64px;border-radius:var(--r-md);border:1.5px solid var(--line);background:var(--surface);font-family:var(--f-disp);font-weight:700;font-size:22px;cursor:pointer;color:var(--sec)}
+.cap button[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.srcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.src{display:flex;flex-direction:column;gap:10px;border:1.5px solid var(--line);border-radius:var(--r-md);padding:12px}
+.src .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.src b{font-size:14px}
+.tog{position:relative;width:44px;height:26px;border-radius:999px;background:var(--line);border:0;cursor:pointer;flex:none;transition:background var(--t-fast)}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform var(--t-med) var(--spring)}
+.tog[aria-checked="true"]{background:var(--accent)}
+.tog[aria-checked="true"]::after{transform:translateX(18px)}
+.rules{display:flex;flex-direction:column;gap:10px}
+.rule{display:flex;gap:12px;align-items:center;border:1.5px solid var(--line);border-radius:var(--r-md);padding:12px 14px;cursor:pointer}
+.rule input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.rule svg{width:22px;height:22px;color:var(--sec);flex:none}
+.onb-foot{display:flex;justify-content:space-between;gap:10px}
+
+/* ===== app shell ===== */
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh;min-height:100dvh}
+.shell.rail{grid-template-columns:72px minmax(0,1fr)}
+.side{position:sticky;top:0;height:100vh;height:100dvh;background:var(--surface-2);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px;padding:14px 10px calc(14px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));overflow-y:auto}
+.side .logo{padding:4px 6px 16px}
+.nav-item{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 12px;border-radius:12px;color:var(--sec);text-decoration:none;font-weight:600;font-size:14.5px;background:none;border:0;cursor:pointer;width:100%;text-align:left}
+.nav-item svg{width:21px;height:21px;flex:none}
+.nav-item:hover{background:var(--sec-tint)}
+.nav-item[aria-current="page"]{background:var(--accent-tint);color:var(--accent)}
+.nav-item[aria-current="page"]::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--accent)}
+.side .grow{flex:1}
+.me{position:relative;overflow:hidden;display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;width:100%;text-align:left}
+.me .av{width:34px;height:34px;font-size:13px;background:var(--sec);color:var(--on-sec)}
+.me span{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.me b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shell.rail .nav-item span,.shell.rail .logo span,.shell.rail .me span,.shell.rail .side-toggle span{display:none}
+.shell.rail .nav-item{justify-content:center;padding:8px}
+.shell.rail .me{justify-content:center;border-color:transparent;background:none}
+.side-toggle{display:flex;align-items:center;gap:10px;min-height:38px;padding:6px 12px;border:0;background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;border-radius:10px}
+.shell.rail .side-toggle{justify-content:center}
+.side-toggle:hover{background:var(--sec-tint)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .in{display:flex;align-items:center;gap:10px;min-height:60px}
+.top h1{font-size:18px;flex:1;min-width:0}
+.pill{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;min-height:38px;border-radius:var(--pill);border:1.5px solid var(--line);background:var(--surface);padding:5px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.top .avbtn{position:relative;overflow:hidden;border:0;padding:0;background:none;cursor:pointer;border-radius:50%}
+.top .avbtn .av{width:38px;height:38px;font-size:14px;background:var(--sec);color:var(--on-sec)}
+main.am{padding-block:20px 48px;max-width:1320px;width:100%;margin:0 auto}
+.view{display:flex;flex-direction:column;gap:18px}
+
+/* ===== today ===== */
+.hello{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hello h2{font-size:22px}
+.today{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:18px;align-items:start}
+.queue{display:flex;flex-direction:column;gap:6px}
+.qrow{position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1.5px solid transparent;border-radius:var(--r-md);padding:10px;cursor:pointer;transition:background var(--t-fast),border-color var(--t-fast)}
+.qrow:hover{background:var(--surface-2)}
+.qrow[aria-current="true"]{background:var(--accent-tint);border-color:var(--accent)}
+.qrow .av{width:40px;height:40px;font-size:14px}
+.qrow .nm{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;min-width:0}
+.qrow .nm b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.qrow .tags{margin-top:4px;flex-wrap:nowrap;overflow:hidden}
+.qrow .num{font-family:var(--f-disp);font-weight:700;font-size:13px;color:var(--muted);width:18px;text-align:center}
+.qrow.done{opacity:.55}
+.qmove{display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity var(--t-fast)}
+.qrow:hover .qmove,.qrow:focus-within .qmove,.qrow[aria-current="true"] .qmove{opacity:1}
+.qmove button{width:26px;height:22px;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;font-size:11px;color:var(--sec)}
+.divider{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:8px 4px}
+.divider::before,.divider::after{content:"";flex:1;border-top:1.5px dashed var(--line)}
+.override{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--surface-2);border-radius:10px;padding:8px;cursor:default}
+.override select{min-height:36px;border:1.5px solid var(--line);border-radius:9px;padding:4px 8px;background:var(--surface);font-size:13px}
+.moved{grid-column:2/-1;font-size:12px;color:var(--sec);font-weight:600}
+.ws{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);min-width:0;overflow:hidden}
+.ws-h{display:flex;align-items:center;gap:14px;padding:16px 18px 10px;flex-wrap:wrap}
+.ws-h .av{width:52px;height:52px;font-size:18px}
+.ws-h h2{font-size:20px}
+.ws-h .sub{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tabs{display:flex;gap:4px;padding:0 14px;border-bottom:1px solid var(--line)}
+.tabs button{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;background:none;border:0;border-bottom:2.5px solid transparent;padding:10px 10px;min-height:44px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
+.tabs button svg{width:17px;height:17px}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.ws-b{padding:16px 18px 20px;display:flex;flex-direction:column;gap:18px}
+.fresh{display:flex;flex-wrap:wrap;gap:6px}
+.fresh .tag{background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:500}
+.fresh .tag b{font-weight:600;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.step{display:flex;align-items:center;gap:8px;background:var(--sec-tint);border-radius:var(--pill);padding:5px 12px 5px 5px;font-size:13.5px;font-weight:600;color:var(--sec)}
+.step i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--sec);color:var(--on-sec);font-style:normal;font-size:12px}
+.step.first{background:var(--accent-tint);color:var(--accent)} .step.first i{background:var(--accent)}
+.arrow{color:var(--muted);font-size:13px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.blk{display:flex;flex-direction:column;gap:8px;min-width:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1.2fr) repeat(3,minmax(0,1fr)) auto;gap:6px 8px;align-items:center;font-size:13.5px}
+.cmp .h{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.cmp .d{font-weight:600}
+.cmp .v{display:flex;align-items:center;gap:6px;min-width:0}
+.cmp .v span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp .row-line{grid-column:1/-1;border-top:1px solid var(--line)}
+.card{border:1.5px solid var(--line);border-radius:var(--r-md);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card.alert{border-color:var(--warn-line);background:var(--warn-tint)}
+.card.good{border-color:var(--ok);background:var(--ok-tint)}
+.card h3{font-size:14px;font-family:var(--f-ui);font-weight:600;display:flex;gap:8px;align-items:center}
+.card h3 svg{width:18px;height:18px}
+.contact{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:var(--r-md);padding:10px;flex-wrap:wrap}
+.contact .ic{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--sec-tint);color:var(--sec);flex:none}
+.contact .t{flex:1;min-width:140px;display:flex;flex-direction:column}
+.contact .t b{font-size:14px}
+.contact .t span{font-size:12.5px;color:var(--muted)}
+.contact.done{border-color:var(--ok);background:var(--ok-tint)}
+.contact.fail{background:var(--surface-2)}
+.outs{display:flex;gap:6px}
+.loops{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.loop{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--surface-2);font-size:13.5px}
+.loop .t{flex:1;min-width:0}
+.loop .chk{width:24px;height:24px;border-radius:50%;border:2px solid var(--sec-tint-2);background:var(--surface);display:grid;place-items:center;cursor:pointer;flex:none;color:var(--surface)}
+.loop.done{background:var(--ok-tint)} .loop.done .chk{background:var(--ok);border-color:var(--ok)}
+.loop.done .t{color:var(--ok)}
+details.ai{border:1.5px dashed var(--muted);border-radius:var(--r-md);padding:8px 12px;font-size:13.5px}
+details.ai summary{cursor:pointer;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px;min-height:30px}
+details.ai p{margin-top:6px}
+.medrow select{width:100%;min-height:38px;border:1.5px solid var(--warn-line);border-radius:9px;padding:4px 8px;background:var(--surface);font-size:13.5px}
+.medrow select.set{border-color:var(--ok)}
+.area{display:flex;flex-direction:column;gap:6px}
+.area .ev{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:flex-start}
+.area textarea{width:100%;min-height:64px;resize:vertical;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--surface)}
+.area textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-tint)}
+.sign{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;background:var(--surface-2);border-radius:var(--r-md);padding:10px 12px}
+.sign .st{font-weight:600;font-size:13.5px;display:flex;gap:8px;align-items:center}
+.st.ok{color:var(--ok)} .st.no{color:var(--warn)}
+.audit{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+.chat{display:flex;flex-direction:column;gap:10px;min-height:80px}
+.bub{max-width:72ch;border-radius:14px;padding:9px 13px;font-size:14px;line-height:1.5}
+.bub.me{align-self:flex-end;background:var(--sec);color:var(--on-sec);border-radius:14px 14px 4px 14px}
+.bub.bot{align-self:flex-start;background:var(--surface-2);border:1.5px dashed var(--muted);border-radius:14px 14px 14px 4px}
+.bub.bot ul{margin:6px 0 0;padding-left:18px}
+.bub .srcs-line{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+.ask{display:flex;gap:8px}
+.ask input{flex:1;min-width:0;min-height:44px;border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--surface)}
+.ask input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-tint)}
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:24px;color:var(--muted)}
+.empty svg{width:40px;height:40px;color:var(--sec-tint-2)}
+.skel{display:flex;flex-direction:column;gap:8px}
+.sk{height:60px;border-radius:var(--r-md);background:linear-gradient(90deg,var(--surface-2),#FFFFFF,var(--surface-2));background-size:200% 100%;animation:sh 1.1s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+
+/* other views */
+.panel{border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h2{font-size:16px}
+.tiers{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.tcard{border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:4px;background:var(--surface-2)}
+.tcard b{font-family:var(--f-disp);font-size:24px}
+.tcard span{font-size:12.5px;color:var(--muted)}
+.tcard.t4c{background:var(--warn-tint)} .tcard.t4c b{color:var(--warn)}
+.tcard.t3c{background:var(--sec-tint)} .tcard.t3c b{color:var(--sec)}
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:8px;border-radius:12px}
+.mrow:hover{background:var(--surface-2)}
+.mrow .av{width:36px;height:36px;font-size:13px}
+.search{min-height:40px;border:1.5px solid var(--line);border-radius:12px;padding:6px 12px;width:100%;max-width:280px}
+.gates{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.gate{display:flex;flex-direction:column;gap:6px;align-items:flex-start;border-radius:var(--r-md);padding:12px;background:var(--ok-tint)}
+.gate svg{width:22px;height:22px;color:var(--ok)}
+.gate span{font-size:13px}
+.sched{display:flex;flex-direction:column;gap:6px}
+.transcript{display:flex;flex-direction:column;gap:8px}
+.line{border-radius:14px;padding:8px 12px;font-size:14px;max-width:60ch}
+.line.ai{background:var(--surface-2);border:1.5px dashed var(--muted)}
+.line.mem{background:var(--sec-tint);color:var(--sec);align-self:flex-end}
+.line.sys{background:var(--warn-tint);color:var(--warn);font-weight:600}
+.line.sys.ok{background:var(--ok-tint);color:var(--ok)}
+.kv{display:grid;grid-template-columns:140px minmax(0,1fr);gap:10px 16px;font-size:14px;margin:0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.prof-head{display:flex;gap:16px;align-items:center}
+.prof-head .av{width:64px;height:64px;font-size:22px;background:var(--sec);color:var(--on-sec)}
+
+/* profile popover + sheet + toast */
+.scrim{position:fixed;inset:0;background:rgba(23,32,54,.28);z-index:50}
+.pop-panel{position:fixed;z-index:51;width:min(340px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 18px 50px rgba(23,32,54,.18);padding:18px;display:flex;flex-direction:column;gap:14px;animation:rise var(--t-med) var(--ease)}
+.pop-panel .kv{grid-template-columns:96px minmax(0,1fr);font-size:13.5px;gap:6px 12px}
+.sheet{position:fixed;z-index:51;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,calc(100vw - 24px));max-height:85vh;overflow:auto;background:var(--surface);border-radius:var(--r-lg);box-shadow:0 18px 50px rgba(23,32,54,.18);padding:20px;display:flex;flex-direction:column;gap:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#FFFFFF;border-radius:12px;padding:10px 16px;font-weight:600;font-size:14px;box-shadow:0 8px 28px rgba(0,0,0,.2);z-index:60;max-width:calc(100% - 32px);animation:rise var(--t-med) var(--ease)}
+
+@media (max-width:1100px){.tiers{grid-template-columns:repeat(3,minmax(0,1fr))}.gates{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:980px){.today{grid-template-columns:1fr}.cols{grid-template-columns:1fr}}
+@media (max-width:560px){.shell,.shell.rail{grid-template-columns:60px minmax(0,1fr)}.side{padding-inline:6px}.nav-item{padding:8px}.top .pill span.lab{display:none}.tiers{grid-template-columns:repeat(2,minmax(0,1fr))}.cmp{grid-template-columns:minmax(0,1fr) repeat(3,minmax(0,1fr))}.cmp .act{grid-column:1/-1}.kv{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<div id="auth" hidden>
+  <div class="auth gut">
+    <div class="auth-top"><div class="logo"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></i><span>Case Workbench</span></div><span class="muted small">Prototype · synthetic data</span></div>
+    <div class="auth-main"><div class="acard" id="acard"></div></div>
+  </div>
+</div>
+<div id="onb" hidden><div class="gut"><div class="onb" id="onbBox"></div></div></div>
+<div id="app" hidden>
+  <div class="shell" id="shell">
+    <aside class="side" aria-label="Main navigation">
+      <a class="logo" href="#today"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></i><span>Case Workbench</span></a>
+      <nav id="sideNav" style="display:flex;flex-direction:column;gap:4px"></nav>
+      <div class="grow"></div>
+      <button class="side-toggle" id="railBtn" aria-label="Collapse side panel"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg><span>Collapse</span></button>
+      <button class="me" id="meBtn" aria-haspopup="dialog" aria-label="Open profile"><span class="av" id="sideAv">A</span><span><b id="sideName">You</b><small id="sideRole">Role</small></span></button>
+    </aside>
+    <div style="min-width:0;display:flex;flex-direction:column">
+      <header class="top gut"><div class="in">
+        <h1 id="vTitle">Today</h1>
+        <button class="pill" id="srcPill" aria-haspopup="dialog"><span class="dot w" id="srcDot"></span><span id="srcTxt">5/6</span><span class="lab">sources</span></button>
+        <button class="avbtn" id="topAv" aria-haspopup="dialog" aria-label="Open profile"><span class="av" id="topAvTxt">A</span></button>
+      </div></header>
+      <main class="am gut">
+        <section class="view" id="v-today" hidden></section>
+        <section class="view" id="v-caseload" hidden></section>
+        <section class="view" id="v-ai-lane" hidden></section>
+        <section class="view" id="v-profile" hidden></section>
+      </main>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div id="layer" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const reduce=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(_){return false}};
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(_){}}
+let tt;function toast(t){const el=$("#toast");el.textContent=t;el.hidden=false;el.style.animation="none";void el.offsetWidth;el.style.animation="";clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,2600)}
+const ic=p=>`<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const I={
+ today:ic('<path d="M4 6h10M4 12h16M4 18h12"/><circle cx="19" cy="6" r="2"/>'),
+ caseload:ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/>'),
+ ai:ic('<path d="M5 4h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-7l-5 4v-4H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M8 9h8M8 12h5"/>'),
+ profile:ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.2-6 8-6s7 2 8 6"/>'),
+ phone:ic('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>'),
+ pill:ic('<rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-35 12 12)"/><path d="M9.5 8.5l6 6"/>'),
+ clock:ic('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+ alert:ic('<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>'),
+ home:ic('<path d="M3 11 12 4l9 7v9H3z"/>'),
+ doc:ic('<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h5"/>'),
+ brief:ic('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>'),
+ sign:ic('<path d="M4 20h16M6 16l10-10 3 3-10 10H6z"/>'),
+ chat:ic('<path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"/>'),
+ check:ic('<path d="m5 12 5 5 9-10"/>'),
+ x:ic('<path d="M6 6l12 12M18 6 6 18"/>'),
+ nophone:ic('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2M3 3l18 18"/>'),
+ globe:ic('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>'),
+ users:ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/>'),
+ shield:ic('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/>'),
+ spark:ic('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>'),
+ heart:ic('<path d="M3 12h4l2-4 4 8 2-4h6"/>'),
+ db:ic('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>'),
+ out:ic('<path d="M15 4h4v16h-4M10 16l4-4-4-4M14 12H4"/>'),
+ bolt:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>'
+};
+const NAV=[["today","Today",I.today],["caseload","Caseload",I.caseload],["ai-lane","AI lane",I.ai],["profile","Profile",I.profile]];
+const TITLES={today:"Today",caseload:"Caseload","ai-lane":"AI reminder lane",profile:"Profile"};
+
+/* ripple + haptics */
+document.addEventListener("pointerdown",e=>{const el=e.target.closest(".btn,.nav-item,.qrow,.opt,.tabs button,.pill,.me,.cap button,.ib,.avbtn");if(!el||el.disabled)return;buzz(el.classList.contains("btn-pri")?8:4);if(reduce())return;const r=el.getBoundingClientRect(),s=Math.max(r.width,r.height)*2.2,sp=document.createElement("span");sp.className="rip";sp.style.width=sp.style.height=s+"px";sp.style.left=(e.clientX-r.left-s/2)+"px";sp.style.top=(e.clientY-r.top-s/2)+"px";el.appendChild(sp);setTimeout(()=>sp.remove(),600)},{passive:true});
+
+const M0={
+ harold:{name:"Harold Lee",age:81,mid:"M-20431",cond:"Heart failure",tier:"4",tc:"t4",lang:"English",
+  window:"Discharged Fri 6 Nov from St. Mary’s · 2-business-day window closes Tue 10 Nov",
+  qchips:[["Discharged Fri","w"],["New drug not filled","w"],["Reachable 6–8 pm","i"]],why:"Window closes Tue · 3 medicine conflicts",
+  fresh:[["ADT","2 days","ok"],["Hospital med list (HIE)","1 day","ok"],["Pharmacy fills","3 days","ok"],["Claims","45 days · stay not billed","stale"],["Discharge summary","MISSING · requested Mon 8:10","miss"],["HRA","8 months · confirm","stale"]],
+  nba:"Call daughter Susan (authorized) on her mobile, 6–8 pm → confirm furosemide 80 mg → send spironolactone refill → book PCP visit by Fri 13 Nov",
+  meds:[{drug:"Furosemide (water pill)",h:"80 mg daily",p:"40 mg · last fill 2 Sep",c:"40 mg (Mar)",opts:["80 mg daily · confirmed","40 mg daily","Awaiting PCP · task created"],dec:""},
+   {drug:"Spironolactone",h:"25 mg daily · new",p:"No fill seen by plan",c:"None",opts:["Not started · refill sent","Taking 25 mg (cash fill)","Awaiting PCP · task created"],dec:""},
+   {drug:"Metoprolol",h:"Stopped",p:"25 mg · filled 30 Oct",c:"25 mg (Mar)",opts:["Stopped · confirmed","Continue 25 mg","Awaiting PCP · task created"],dec:""},
+   {drug:"Atorvastatin",h:"40 mg",p:"40 mg · filled 20 Oct",c:"40 mg",agree:true}],
+  reach:[{id:"susan",who:"Daughter Susan · mobile",note:"Authorized on file · best 6–8 pm (pharmacy record, 3 days old)",num:"(555) 014-2290",log:""},{id:"home",who:"Home phone",note:"No answer twice, last Sat",num:"(555) 014-7781",log:""}],
+  loops:[{t:"PCP follow-up visit within 7 days",act:"Book visit",done:"",doneTxt:"Booked Fri 13 Nov, Dr. Okafor"},{t:"Home scale for daily weights",act:"Order scale",done:"",doneTxt:"Ordered, arrives Wed"},{t:"Discharge summary from St. Mary’s",act:"Chase again",done:"",doneTxt:"Second request sent"}],
+  draft:"3-day stay at St. Mary’s; reason not known until the discharge summary arrives. Water pill dose doubled, one new drug, one drug stopped.",draftSrc:"ADT 6 Nov · HIE med list 7 Nov",
+  areas:[["Recent care","Discharged Fri 6 Nov from St. Mary’s after 3 days [ADT]. Discharge summary MISSING, requested Mon 8:10."],["Plan and next steps","Open loops: PCP visit, home scale, discharge summary."]],
+  ph:"e.g. Dose doubled; stopped drug still filled; Susan brings all bottles Wed."},
+ evelyn:{name:"Evelyn Price",age:79,mid:"M-31877",cond:"Hip fracture, home after rehab",tier:"4",tc:"t4",lang:"English",find:true,
+  window:"Home from Oakview rehab Fri 6 Nov · window closes Tue 10 Nov · no working phone",
+  qchips:[["Number dead","w"],["Alt number in pharmacy record","i"]],why:"FIND · window closes Tue",
+  fresh:[["ADT (rehab discharge)","2 days","ok"],["Home phone","Disconnected · carrier message Sat","miss"],["Pharmacy record","12 days · has a mobile","ok"],["Claims","30 days","stale"],["HRA","14 months · overdue","stale"]],
+  nba:"Call the pharmacy-listed mobile → if no answer, call Oakview’s discharge planner → CHW home visit by Tue 12:00",
+  dup:{a:"M-31877 · enrolled 2019 · 14 Oak St · phone (555) 013-4410 (disconnected)",b:"M-31877-A · re-enrolled Aug 2026 · 14 Oak St, Apt 2 · no phone",why:"Same name and date of birth, different address line",dec:""},
+  steps:[{id:"h",t:"Home phone (555) 013-4410",note:"Disconnected · carrier message Sat",fixed:"fail"},{id:"rx",t:"Pharmacy-listed mobile (555) 013-9902",note:"Added at the pharmacy 12 days ago",log:""},{id:"rehab",t:"Oakview rehab discharge planner",note:"May hold a newer number",log:""},{id:"chw",t:"CHW home visit",note:"Requested automatically if not reached by Tue 12:00",act:"Request now",log:""}],
+  loops:[{t:"Home-safety check after the fall",act:"Add to call",done:"",doneTxt:"Added to call script"},{t:"Home physical therapy start date",act:"Ask agency",done:"",doneTxt:"Message sent to agency"}],
+  draft:"Hip fracture repair, then 18 days at Oakview rehab; home since Fri. Fall-risk follow-up is due.",draftSrc:"ADT 6 Nov · claims to 8 Oct",
+  areas:[["Assessment","Home from rehab Fri 6 Nov [ADT]. Fall risk after hip fracture [claims 8 Oct]."],["Plan and next steps","Find steps, home-safety check, PT start date."]],
+  ph:"e.g. Reached on pharmacy mobile; walking with a frame; daughter visits daily."},
+ walter:{name:"Walter Brooks",age:66,mid:"M-18452",cond:"Depression · alcohol use · unstable housing",tier:"2→3",tc:"t3",lang:"English",
+  window:"ED visit Sat 7 Nov at Mercy, sent home · 3rd ED visit in 60 days · claims show nothing yet",
+  qchips:[["3rd ED visit in 60 days","w"],["Refill gap","w"],["Text first","i"]],why:"Moved up overnight",
+  fresh:[["ADT (ED visit, no diagnosis)","2 days","ok"],["Pharmacy fills","Sertraline last filled 14 Sep (30-day)","stale"],["Claims","40 days · ED visits not billed","stale"],["Address on file","Old · shelter since Oct (referral platform)","miss"],["Substance-use records","Hidden: Part 2 consent covers care coordination","ok"]],
+  nba:"Text Walter (prepaid phone out of minutes) → call shelter case worker Ms. Ortiz (release on file) → warm handoff to the plan’s behavioral-health counselor → sertraline refill and a ride to the clinic",
+  tierchg:{from:"2",to:"3",reasons:["3rd ED visit in 60 days; latest Sat 7 Nov [ADT]","Antidepressant refill ~25 days overdue [PBM]","Shelter address since Oct [referral platform]; claims show none of this yet"],dec:""},
+  reach:[{id:"w",who:"Walter · prepaid mobile (text)",note:"Minutes run out mid-month; texts still arrive",num:"(555) 018-3321",log:""},{id:"ortiz",who:"Shelter case worker Ms. Ortiz",note:"Release of information on file (Oct)",num:"(555) 018-6604",log:""}],
+  loops:[{t:"Behavioral-health counselor warm handoff",act:"Request",done:"",doneTxt:"Counselor call booked Tue 2 pm"},{t:"Sertraline refill",act:"Send refill",done:"",doneTxt:"Refill sent to shelter-area pharmacy"},{t:"Ride to clinic (transport benefit)",act:"Book ride",done:"",doneTxt:"Ride booked Thu 10 am"}],
+  draft:"Three ED visits in 60 days; latest Sat, reason not in the alert. Antidepressant refill overdue. Living at a shelter since October.",draftSrc:"ADT 7 Nov · PBM 14 Sep · referral platform Oct",
+  areas:[["Assessment","3rd ED visit in 60 days [ADT]. Sertraline ~25 days overdue [PBM]. Shelter since Oct."],["Plan and next steps","Counselor handoff, refill, ride to clinic."]],
+  ph:"e.g. Reached via Ms. Ortiz; low mood, no safety concerns stated; counselor Tue."},
+ rosa:{name:"Rosa Delgado",age:72,mid:"M-27719",cond:"Diabetes · mild dementia · dual-eligible",tier:"3",tc:"t3",lang:"Spanish",
+  window:"Monthly Tier 3 contact due · home-health prior auth pending, day 4",
+  qchips:[["Spanish","i"],["Caregiver not authorized","w"],["PA day 4",""]],why:"Monthly contact due · 2 stuck loops",
+  fresh:[["UM prior auth","Today · pending day 4 of 7","ok"],["Food referral","Marked closed 20 Oct · not delivered","miss"],["Pharmacy fills","5 days","ok"],["Caregiver authorization","MISSING","miss"],["HRA","3 months","ok"]],
+  nba:"Call Rosa with a Spanish interpreter → send the caregiver authorization form → reopen the food referral → ask UM for the prior-auth status",
+  auth:{who:"Daughter Ana manages her pills but has no authorization on file. Until Rosa signs, you can listen to Ana but not share Rosa’s health details.",sent:""},
+  reach:[{id:"r",who:"Rosa · home phone, Spanish interpreter line",note:"Best afternoons · never AI calls (dementia flag)",num:"(555) 027-5508",log:""},{id:"ana",who:"Daughter Ana · mobile",note:"Not authorized: listen only, share nothing",num:"(555) 027-1196",log:""}],
+  loops:[{t:"Home-health prior auth: day 4 of 7",act:"Ask UM",done:"",doneTxt:"UM says decision due Wed"},{t:"Food referral: closed but not delivered",act:"Reopen",done:"",doneTxt:"Reopened, vendor called"},{t:"Medicaid care coordinator not told about PA",act:"Notify",done:"",doneTxt:"Coordinator notified"}],
+  draft:"Monthly contact due. Daughter helps with pills. Prior auth for home health pending 4 days; food referral shows closed with no delivery.",draftSrc:"UM today · referral log 20 Oct",
+  areas:[["Assessment","Mild dementia; daughter manages pills [HRA Aug]."],["Plan and next steps","Authorization form, food referral, prior auth."]],
+  ph:"e.g. Spoke with Rosa via interpreter; form mailed; food referral reopened."},
+ linda:{name:"Linda Carter",age:68,mid:"M-40263",cond:"Type 2 diabetes, stable",tier:"1",tc:"t1",lang:"English",review:true,
+  window:"Old cost score says high risk · need signals say stable",
+  qchips:[["Confirm step-down: cost peak was last year",""]],why:"Review, no call",
+  fresh:[["Claims","30 days","ok"],["Pharmacy fills","2 days · metformin refill due","stale"],["A1c 7.1%","Lab feed, Aug","ok"],["Old cost score","From last year’s surgery","stale"]],
+  nba:"No nurse call. Confirm Tier 1; the AI reminder lane handles the metformin refill on Tue 10:30",
+  step:{txt:"Last year’s cost peak came from one planned knee surgery. No admissions or ED visits in 11 months; A1c 7.1% in Aug.",dec:""},
+  loops:[{t:"Metformin refill due",act:"See AI lane",go:"ai-lane",done:"",doneTxt:"Reminder scheduled Tue 10:30"}],
+  draft:"Stable diabetes. High cost last year was one planned surgery, not illness.",draftSrc:"Claims to 8 Oct · PBM 7 Nov",
+  areas:[["Assessment","No events in 11 months [claims]. A1c 7.1% [lab Aug]."],["Plan and next steps","Tier 1; AI refill reminder Tue."]],
+  ph:"e.g. Cost peak was planned surgery; stable; Tier 1 confirmed."}
+};
+const SRC0=[{k:"ADT alerts",d:"Admits, discharges, ED visits via the HIE",age:"8 min ago",ok:true,on:true},{k:"HIE clinical documents",d:"Hospital medicine lists, discharge summaries",age:"Last pull failed 7:55",ok:false,on:true},{k:"Pharmacy fills (PBM)",d:"Fills, gaps, alternate phone numbers",age:"Today 6:00",ok:true,on:true},{k:"Medical claims",d:"History and diagnoses; lags weeks",age:"Sun, weekly load",ok:true,on:true},{k:"Prior auth / UM",d:"Open requests and their clocks",age:"Today 7:30",ok:true,on:true},{k:"Dialer logs",d:"Call attempts and outcomes",age:"Live",ok:true,on:true}];
+
+
+
+/* state */
+const KEY="cw.proto.v4";
+function fresh(){return {user:null,onb:{done:false,step:0,role:"",program:"D-SNP line, Medicare Advantage",caseload:48,cap:4,rules:[false,false,false],tested:false},ui:{rail:null},
+ W:{sel:"harold",sub:"brief",convos:0,queue:["harold","evelyn","walter","rosa","linda"],done:{},moved:{},attest:{},audit:[],min:482,lindaUp:false,aiStep:0,chat:{}},
+ M:JSON.parse(JSON.stringify(M0)),src:JSON.parse(JSON.stringify(SRC0))}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.M&&s.W&&s.onb)return s}catch(_){}return fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(ST))}catch(_){}}
+let ST=load(),M=ST.M,W=ST.W,override=null,loadedToday=false,lastOnbStep=-1,authStep={mode:"login",phase:"form",email:"",name:"",org:"",err:{}};
+const first=()=>ST.user?ST.user.name.split(" ")[0]:"there";
+const initials=n=>(n||"?").split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();
+const ROLES=[["rn","RN case manager",I.heart],["sup","Supervisor",I.users],["lpn","LPN / social worker",I.doc],["chw","Community health worker",I.home],["qa","Compliance",I.shield]];
+const ROLE=r=>(ROLES.find(x=>x[0]===r)||["","Team member"])[1];
+const tierN=m=>m.tier.slice(-1);
+
+/* router */
+const APP=["today","caseload","ai-lane","profile"];
+function go(r){if(location.hash.slice(1)===r)route();else location.hash=r}
+function redirect(r){location.replace("#"+r)}
+let lastView="";
+function route(){
+ let r=location.hash.slice(1)||"login";
+ if(!["login","signup","onboarding"].concat(APP).includes(r))r="login";
+ if(APP.includes(r)){if(!ST.user){redirect("login");return}if(!ST.onb.done){redirect("onboarding");return}}
+ if(r==="onboarding"){if(!ST.user){redirect("login");return}if(ST.onb.done){redirect("today");return}}
+ if((r==="login"||r==="signup")&&ST.user){redirect(ST.onb.done?"today":"onboarding");return}
+ closeLayer();
+ $("#auth").hidden=!(r==="login"||r==="signup");$("#onb").hidden=r!=="onboarding";$("#app").hidden=!APP.includes(r);
+ if(r==="login"||r==="signup"){if(authStep.mode!==r)authStep={mode:r,phase:"form",email:authStep.email,name:"",org:"",err:{}};renderAuth()}
+ if(r==="onboarding")renderOnb();
+ if(APP.includes(r))renderApp(r);
+ if(r!==lastView)window.scrollTo(0,0);lastView=r;
+}
+window.addEventListener("hashchange",route);
+
+/* auth */
+const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function nameFromEmail(e){const l=e.split("@")[0].replace(/[._\-\d]+/g," ").trim();return l?l.split(" ").map(w=>w[0].toUpperCase()+w.slice(1)).join(" "):"New user"}
+function field(id,label,type,val,o){o=o||{};const er=authStep.err[id];return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val||"")}" ${o.ac?`autocomplete="${o.ac}"`:""} ${o.im?`inputmode="${o.im}"`:""} ${o.cls?`class="${o.cls}"`:""} ${o.max?`maxlength="${o.max}"`:""} aria-invalid="${!!er}" aria-describedby="${id}-e">${o.help?`<span class="help">${o.help}</span>`:""}<span class="err" id="${id}-e">${er?esc(er):""}</span></div>`}
+function renderAuth(){const A=authStep,c=$("#acard");
+ if(A.phase==="google")c.innerHTML=`<button class="btn btn-text btn-sm" data-act="auth-back" style="align-self:flex-start">← Back</button><h1>Continue with Google</h1><form id="gform" novalidate style="display:flex;flex-direction:column;gap:14px">${field("gemail","Gmail address","email",A.email,{ac:"email"})}<div class="demo">Demo: only the format is checked. No password is asked for or stored.</div><button class="btn btn-pri btn-lg btn-block" type="submit">Continue</button></form>`;
+ else if(A.phase==="code")c.innerHTML=`<button class="btn btn-text btn-sm" data-act="auth-back" style="align-self:flex-start">← Change email</button><h1>Check your inbox</h1><p class="muted">Code sent to <b>${esc(A.email)}</b></p><form id="cform" novalidate style="display:flex;flex-direction:column;gap:14px">${field("code","6-digit code","text","",{ac:"one-time-code",im:"numeric",cls:"code",max:6})}<div class="demo">Demo code: <b>246810</b></div><button class="btn btn-pri btn-lg btn-block" type="submit">Verify</button></form>`;
+ else if(A.mode==="login")c.innerHTML=`<h1>Sign in</h1><p class="muted">Pick up where your queue left off.</p><button class="btn gbtn btn-lg btn-block" data-act="google"><span class="gmark" aria-hidden="true">G</span>Continue with Google</button><div class="or">or email</div><form id="lform" novalidate style="display:flex;flex-direction:column;gap:14px">${field("lemail","Email","email",A.email,{ac:"email"})}<button class="btn btn-pri btn-lg btn-block" type="submit">Send code</button></form><p class="muted small">New here? <a href="#signup">Create an account</a></p>`;
+ else c.innerHTML=`<h1>Create account</h1><button class="btn gbtn btn-lg btn-block" data-act="google"><span class="gmark" aria-hidden="true">G</span>Sign up with Google</button><div class="or">or email</div><form id="sform" novalidate style="display:flex;flex-direction:column;gap:14px">${field("sname","Full name","text",A.name,{ac:"name"})}${field("semail","Email","email",A.email,{ac:"email"})}<label class="check"><input type="checkbox" id="sterms" ${A.terms?"checked":""}><span>I’ll use synthetic data only.</span></label>${A.err.sterms?`<span class="err" style="color:var(--bad);font-weight:600;font-size:13px">${esc(A.err.sterms)}</span>`:""}<button class="btn btn-pri btn-lg btn-block" type="submit">Create account</button></form><p class="muted small">Have an account? <a href="#login">Sign in</a></p>`;
+ const f=c.querySelector('[aria-invalid="true"]')||c.querySelector("input");f&&setTimeout(()=>f.focus(),30)}
+function signIn(email,name,via){ST.user={name:name||nameFromEmail(email),email,org:"Demo Health Plan",via,since:"Nov 2026"};save();buzz(15);toast("Signed in");redirect(ST.onb.done?"today":"onboarding")}
+
+/* onboarding (updates in place; animates only when the step changes) */
+const RULES=[[I.users,"The queue ranks; I decide the order."],[I.sign,"I write every conclusion myself."],[I.shield,"AI calls only go to consented, stable members."]];
+function renderOnb(){const O=ST.onb,s=O.step,b=$("#onbBox");let body="",ok=true,next="Continue";
+ if(s===0){ok=!!O.role;body=`<h1>Hi ${esc(first())}, what’s your role?</h1><div class="opts" role="radiogroup" aria-label="Role">${ROLES.map(r=>`<button class="opt" role="radio" aria-checked="${O.role===r[0]}" data-act="role" data-v="${r[0]}">${r[2]}<b>${r[1]}</b></button>`).join("")}</div>`}
+ if(s===1){ok=O.caseload>=10&&O.caseload<=300;body=`<h1>Your caseload</h1><div class="field"><label for="oprog">Program</label><select id="oprog">${["D-SNP line, Medicare Advantage","Medicare Advantage","Medicaid managed care"].map(p=>`<option ${O.program===p?"selected":""}>${p}</option>`).join("")}</select></div><div class="field"><label for="ocase">Active members</label><input id="ocase" type="number" inputmode="numeric" min="10" max="300" value="${O.caseload}"></div>`}
+ if(s===2){body=`<h1>Real conversations a day</h1><p class="muted">Your queue is cut at this number.</p><div class="cap" role="radiogroup" aria-label="Conversations per day">${[2,3,4,5,6].map(n=>`<button role="radio" aria-checked="${O.cap===n}" data-act="cap" data-v="${n}">${n}</button>`).join("")}</div>`}
+ if(s===3){ok=ST.src[0].on&&ST.src[2].on;body=`<h1>Connect data</h1><ul class="srcs">${ST.src.map((x,i)=>`<li class="src"><div class="top"><b>${esc(x.k)}</b><button class="tog" role="switch" aria-checked="${x.on}" aria-label="${esc(x.k)}" data-act="src-tog" data-i="${i}"></button></div><div id="st-${i}">${srcStatus(x,i)}</div></li>`).join("")}</ul><div><button class="btn btn-sec" data-act="src-test">${O.tested?"Test again":"Test connections"}</button></div>`}
+ if(s===4){ok=O.rules.every(Boolean);next="Open my queue";body=`<h1>Three ground rules</h1><div class="rules">${RULES.map((r,i)=>`<label class="rule">${r[0]}<span style="flex:1">${r[1]}</span><input type="checkbox" data-rule="${i}" ${O.rules[i]?"checked":""}></label>`).join("")}</div>`}
+ const anim=s!==lastOnbStep;lastOnbStep=s;
+ b.innerHTML=`<div class="onb-top"><div class="logo"><i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></i><span>Setup</span></div><span class="muted small">${s+1} / 5</span></div>
+ <div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="${s+1}" aria-label="Setup progress">${[0,1,2,3,4].map(i=>`<span class="${i<=s?"on":""}"></span>`).join("")}</div>
+ <div class="ocard${anim?" enter":""}">${body}</div>
+ <div class="onb-foot">${s?`<button class="btn btn-ghost" data-act="onb-back">Back</button>`:`<button class="btn btn-text" data-act="logout">Sign out</button>`}<button class="btn btn-pri btn-lg" id="onbNext" data-act="onb-next" ${ok?"":"disabled"}>${next}</button></div>`}
+function srcStatus(x,i){if(!x.on)return `<span class="tag">Off</span>`;if(x.testing)return `<span class="spin" aria-label="Testing"></span>`;if(!ST.onb.tested)return `<span class="tag">Not tested</span>`;return x.ok?`<span class="tag ok">${I.check}Connected</span>`:`<span class="tags"><span class="tag bad">${I.x}Failed</span><button class="btn btn-ghost btn-sm" data-act="src-retry" data-i="${i}">Retry</button></span>`}
+function onbNextState(){const O=ST.onb,b=$("#onbNext");if(!b)return;const s=O.step;b.disabled=!(s===0?!!O.role:s===1?(O.caseload>=10&&O.caseload<=300):s===3?(ST.src[0].on&&ST.src[2].on):s===4?O.rules.every(Boolean):true)}
+
+/* app shell */
+function railWanted(){return ST.ui.rail==null?innerWidth<1200:ST.ui.rail}
+function applyRail(){const r=railWanted()||innerWidth<=560;$("#shell").classList.toggle("rail",r);$("#railBtn").setAttribute("aria-label",r?"Expand side panel":"Collapse side panel");$("#railBtn").innerHTML=(r?ic('<path d="M9 6l6 6-6 6"/>'):ic('<path d="M15 6l-6 6 6 6"/>'))+`<span>${r?"Expand":"Collapse"}</span>`;$("#railBtn").hidden=innerWidth<=560}
+window.addEventListener("resize",()=>{if(!$("#app").hidden)applyRail()});
+function renderApp(v){
+ applyRail();
+ $("#sideNav").innerHTML=NAV.map(n=>`<a class="nav-item" href="#${n[0]}" aria-current="${v===n[0]?"page":"false"}" title="${n[1]}">${n[2]}<span>${n[1]}</span></a>`).join("");
+ $("#sideAv").textContent=$("#topAvTxt").textContent=initials(ST.user.name);$("#sideName").textContent=ST.user.name;$("#sideRole").textContent=ROLE(ST.onb.role);
+ $("#vTitle").textContent=TITLES[v];renderSrcPill();
+ APP.forEach(x=>{$("#v-"+x).hidden=x!==v});
+ if(v!==lastView){const el=$("#v-"+v);el.classList.remove("enter");void el.offsetWidth;el.classList.add("enter")}
+ ({today:renderToday,caseload:renderCase,"ai-lane":renderAI,profile:renderProfile})[v]();
+}
+function renderSrcPill(){const on=ST.src.filter(x=>x.on),bad=on.filter(x=>!x.ok).length;$("#srcDot").className="dot"+(bad?" w":"");$("#srcTxt").textContent=`${on.length-bad}/${on.length}`}
+
+/* layers: profile popover, sources sheet */
+let lastFocus=null;
+function openLayer(html,cls,pos){lastFocus=document.activeElement;const L=$("#layer");L.innerHTML=`<div class="scrim" data-act="layer-close"></div><div class="${cls}" role="dialog" aria-modal="true" aria-labelledby="layerT" ${pos?`style="${pos}"`:""}>${html}</div>`;L.hidden=false;setTimeout(()=>{const b=L.querySelector("button");b&&b.focus()},20)}
+function closeLayer(){const L=$("#layer");if(L.hidden)return;L.hidden=true;L.innerHTML="";lastFocus&&lastFocus.focus&&lastFocus.focus()}
+function openProfile(anchor){const u=ST.user,O=ST.onb,r=anchor.getBoundingClientRect();
+ const pos=r.top>innerHeight/2?`left:${Math.max(12,r.left)}px;bottom:${innerHeight-r.top+8}px`:`right:12px;top:${r.bottom+8}px`;
+ openLayer(`<div class="prof-head"><span class="av">${esc(initials(u.name))}</span><div><h2 id="layerT" style="font-size:17px">${esc(u.name)}</h2><p class="muted small" style="overflow-wrap:anywhere">${esc(u.email)}</p></div></div>
+ <dl class="kv"><dt>Role</dt><dd>${esc(ROLE(O.role))}</dd><dt>Plan</dt><dd>${esc(u.org)}</dd><dt>Program</dt><dd>${esc(O.program)}</dd><dt>Caseload</dt><dd>${O.caseload} members</dd><dt>Capacity</dt><dd>${O.cap} talks a day</dd><dt>Sign-in</dt><dd>${u.via==="google"?"Google":"Email code"}</dd></dl>
+ <div style="display:flex;gap:8px"><button class="btn btn-sec" data-act="to-profile">Edit profile</button><button class="btn btn-ghost" data-act="logout">${I.out}Sign out</button></div>`,"pop-panel",pos)}
+function sheetSources(){openLayer(`<div style="display:flex;justify-content:space-between;align-items:center"><h2 id="layerT" style="font-size:18px">Data sources</h2><button class="ib" data-act="layer-close" aria-label="Close">${I.x}</button></div>
+ <div class="loops">${ST.src.filter(x=>x.on).map(x=>{const i=ST.src.indexOf(x);return `<div class="loop"><span class="dot ${x.ok?"":"w"}"></span><span class="t"><b>${esc(x.k)}</b> <span class="muted small">· ${esc(x.age)}</span></span>${x.testing?`<span class="spin"></span>`:x.ok?"":`<button class="btn btn-sec btn-sm" data-act="src-retry" data-i="${i}">Retry</button>`}</div>`}).join("")}</div>`,"sheet")}
+
+/* ---------- TODAY ---------- */
+function clock(){const h=Math.floor(W.min/60),m=W.min%60;return `${h>12?h-12:h}:${String(m).padStart(2,"0")}${h>=12?" pm":""}`}
+function tick(n){W.min+=n||3}
+function log(id,who,text){W.audit.unshift({id,who,text,t:clock()})}
+function renderToday(){const v=$("#v-today");
+ if(!loadedToday){loadedToday=true;v.innerHTML=`<div class="today"><div class="skel"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div><div class="sk" style="height:380px"></div></div>`;setTimeout(()=>{if(location.hash==="#today")renderToday()},reduce()?40:600);return}
+ const left=W.queue.filter(id=>!W.done[id]).length;
+ v.innerHTML=`<div class="hello"><h2>Good morning, ${esc(first())}</h2><span class="muted">Mon 9 Nov · ${left} to do</span></div><div class="today"><div class="queue" id="queue" aria-label="Today’s queue"></div><div class="ws" id="ws"></div></div>`;
+ renderQueue();renderWS()}
+const qIcon={w:I.alert,i:I.phone,"":I.clock};
+function renderQueue(){const q=$("#queue");if(!q)return;const cap=ST.onb.cap,active=W.queue.filter(id=>!W.done[id]),done=W.queue.filter(id=>W.done[id]);let h="",n=0;
+ if(!active.length)h+=`<div class="empty">${I.check}<b>All clear</b><span class="small">Deferred items move up tomorrow.</span></div>`;
+ active.forEach(id=>{const m=M[id];n++;if(n===cap+1)h+=`<div class="divider">Later</div>`;
+  h+=`<div class="qrow" role="button" tabindex="0" data-act="pick" data-id="${id}" aria-current="${W.sel===id}"><span class="num">${n}</span>
+  <span style="display:flex;gap:10px;align-items:center;min-width:0"><span class="av ring${tierN(m)}" aria-hidden="true">${initials(m.name)}</span><span style="min-width:0;flex:1"><span class="nm"><b>${esc(m.name)}</b></span><span class="tags">${m.qchips.slice(0,1).map(c=>`<span class="tag ${c[1]}" title="${esc(c[0])}">${qIcon[c[1]]||""}${esc(c[0])}</span>`).join("")}</span></span></span>
+  <span class="qmove"><button data-act="mv" data-id="${id}" data-d="-1" aria-label="Move ${esc(m.name)} up">▲</button><button data-act="mv" data-id="${id}" data-d="1" aria-label="Move ${esc(m.name)} down">▼</button></span>
+  ${W.moved[id]?`<span class="moved">Moved · ${esc(W.moved[id])}</span>`:""}
+  ${override&&override.id===id?`<div class="override"><label class="vh" for="ovr">Reason</label><select id="ovr"><option value="">Why move?</option><option>Clinical judgment</option><option>Member asked for a time</option><option>New information</option><option>Workload</option></select><button class="btn btn-pri btn-sm" data-act="mv-ok">Move</button><button class="btn btn-text btn-sm" data-act="mv-cancel">Cancel</button></div>`:""}</div>`});
+ if(active.length&&active.length<=cap)h+=`<div class="divider">Later</div>`;
+ h+=`<button class="tag" style="align-self:flex-start;border:0;cursor:pointer;margin:2px 4px" data-act="note" data-t="12 routine follow-ups deferred to Tue, each with its risk">${I.clock}12 deferred to Tue</button>`;
+ if(done.length)h+=`<div class="divider">Done</div>`+done.map(id=>`<div class="qrow done" role="button" tabindex="0" data-act="pick" data-id="${id}" aria-current="${W.sel===id}"><span class="num">✓</span><span style="display:flex;gap:10px;align-items:center"><span class="av">${initials(M[id].name)}</span><b>${esc(M[id].name)}</b></span><span></span></div>`).join("");
+ q.innerHTML=h}
+const WHEN={harold:"Discharged Fri",evelyn:"Home from rehab Fri",walter:"ED visit Sat",rosa:"Monthly contact due",linda:"Stable 11 months"};
+const cap1=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const fState=s=>s==="ok"?"":s==="miss"?"bad":"w";
+function steps(nba){return `<div class="steps">${nba.split("→").map((s,i)=>`${i?`<span class="arrow" aria-hidden="true">›</span>`:""}<span class="step ${i?"":"first"}"><i>${i+1}</i>${esc(cap1(s.trim()))}</span>`).join("")}</div>`}
+function outBtns(kind,id,rid){return `<span class="outs"><button class="btn btn-sec btn-sm" data-act="${kind}" data-id="${id}" data-r="${rid}" data-o="Reached">${I.check}Reached</button><button class="ib" style="width:34px;height:34px" data-act="${kind}" data-id="${id}" data-r="${rid}" data-o="No answer" aria-label="No answer" title="No answer">${I.x}</button><button class="ib" style="width:34px;height:34px" data-act="${kind}" data-id="${id}" data-r="${rid}" data-o="Wrong number" aria-label="Wrong number" title="Wrong number">${I.nophone}</button></span>`}
+function briefTab(id){const m=M[id];let h=`<div class="fresh" aria-label="What we know and how old it is">${m.fresh.map(f=>`<span class="tag" title="${esc(f[0])}: ${esc(f[1])}"><span class="dot ${fState(f[2])}"></span>${esc(f[0])} <b>${esc(short(f[1]))}</b></span>`).join("")}</div>`;
+ h+=`<div class="blk"><span class="lbl">Next steps</span>${steps(m.nba)}</div>`;
+let L="",R="",MED="";
+ if(m.meds){const o=m.meds.filter(x=>!x.agree);MED=`<div class="blk"><span class="lbl">Medicines · ${o.filter(x=>!x.dec).length} open</span><div class="cmp"><span class="h">Drug</span><span class="h">Hospital</span><span class="h">Pharmacy</span><span class="h">PCP</span><span></span>${o.map(x=>`<span class="row-line"></span><span class="d">${esc(x.drug.split(" (")[0])}</span><span class="v"><span>${esc(sv(x.h))}</span></span><span class="v"><span class="dot ${x.dec?"":"w"}"></span><span>${esc(sv(x.p))}</span></span><span class="v"><span>${esc(sv(x.c))}</span></span><span class="act">${x.dec?`<span class="tag ok">${I.check}Set</span>`:`<button class="btn btn-ghost btn-sm" data-act="go-attest" data-id="${id}">Decide</button>`}</span>`).join("")}</div></div>`}
+ if(m.dup)L+=`<div class="card ${m.dup.dec?"good":"alert"}"><h3>${I.users}Two records, one person?</h3>${m.dup.dec?`<span class="tag ok">${esc(m.dup.dec)}</span>`:`<div class="tags"><button class="btn btn-sec btn-sm" data-act="dup" data-id="${id}" data-o="Linked by you">Link</button><button class="btn btn-ghost btn-sm" data-act="dup" data-id="${id}" data-o="Kept separate by you">Keep separate</button></div>`}</div>`;
+ if(m.tierchg){const t=m.tierchg;L+=`<div class="card ${t.dec?"good":"alert"}"><h3>${I.alert}Tier ${t.from} → ${t.to}?</h3><div class="tags">${t.reasons.map(r=>`<span class="tag" title="${esc(r)}">${esc(r.split(" [")[0].split(";")[0])}</span>`).join("")}</div>${t.dec?`<span class="tag ok">${esc(t.dec)}</span>`:`<div class="tags"><button class="btn btn-sec btn-sm" data-act="tier" data-id="${id}" data-o="Tier 3 confirmed">Confirm Tier 3</button><button class="btn btn-ghost btn-sm" data-act="tier" data-id="${id}" data-o="Kept at Tier 2">Keep Tier 2</button></div>`}</div>`}
+ if(m.auth)L+=`<div class="card ${m.auth.sent?"good":"alert"}"><h3>${I.shield}Daughter not authorized</h3>${m.auth.sent?`<span class="tag ok">${I.check}Form sent</span>`:`<button class="btn btn-sec btn-sm" style="align-self:flex-start" data-act="auth" data-id="${id}">Send form (Spanish)</button>`}</div>`;
+ if(m.step)L+=`<div class="card ${m.step.dec?"good":""}"><h3>${I.heart}Cost score vs need</h3><div class="tags"><span class="tag">No events 11 mo</span><span class="tag">A1c 7.1%</span><span class="tag w">Cost peak = surgery</span></div>${m.step.dec?`<span class="tag ok">${esc(m.step.dec)}</span>`:`<div class="tags"><button class="btn btn-sec btn-sm" data-act="step" data-id="${id}" data-o="Tier 1 confirmed">Confirm Tier 1</button><button class="btn btn-ghost btn-sm" data-act="step" data-id="${id}" data-o="Kept on my list">Keep</button></div>`}</div>`;
+ const C=[];(m.steps||[]).forEach(s=>C.push({t:s.t,sub:s.log?s.log:s.note,st:s.fixed||s.log,kind:"find",rid:s.id,chw:s.id==="chw",act:s.act}));(m.reach||[]).forEach(r=>C.push({t:r.who,sub:r.log?`${r.log} · ${r.at}`:short(r.note),st:r.log,kind:"call",rid:r.id,num:r.num}));
+ R+=`<div class="blk"><span class="lbl">${m.steps?"Find plan":"Reach"}</span>${C.map(c=>{const cls=c.st==="Reached"||(c.st&&c.chw)?"done":c.st?"fail":"";return `<div class="contact ${cls}"><span class="ic">${c.st==="fail"||c.st==="Wrong number"?I.nophone:I.phone}</span><span class="t"><b>${esc(c.t)}</b><span>${esc(c.st==="fail"?"Disconnected":c.sub)}</span></span>${c.st?"":c.chw?`<button class="btn btn-sec btn-sm" data-act="find" data-id="${id}" data-r="chw" data-o="CHW visit requested">Request</button>`:outBtns(c.kind,id,c.rid)}</div>`}).join("")}</div>`;
+ if(m.loops)R+=`<div class="blk"><span class="lbl">Open loops</span><ul class="loops">${m.loops.map((l,i)=>`<li class="loop ${l.done?"done":""}"><button class="chk" data-act="loop" data-id="${id}" data-i="${i}" aria-label="${esc(l.act)}: ${esc(l.t)}" ${l.done?"disabled":""}>${I.check}</button><span class="t">${esc(l.done||l.t)}</span></li>`).join("")}</ul></div>`;
+ h+=MED;
+ h+=`<div class="cols"><div class="blk">${L||`<div class="empty small">${I.check}No conflicts</div>`}</div><div class="blk">${R}</div></div>`;
+ h+=`<details class="ai"><summary>${I.spark}AI summary · draft</summary><p>${esc(m.draft)} <span class="muted small">[${esc(m.draftSrc)}]</span></p></details>`;
+ return h}
+function sv(s){return String(s).replace(" daily","").split(" · ")[0].split(" (")[0]}
+function short(s){s=String(s);return s.length>40?s.slice(0,38).replace(/[ ,·(]+$/,"")+"…":s}
+function areaList(m){const a=[];if(m.meds)a.push(["Medicines",()=>m.meds.filter(x=>!x.agree).map(x=>`${x.drug.split(" ")[0]}: ${x.dec||"open"}`).join(" · ")]);m.areas.forEach(x=>a.push([x[0],()=>x[1]]));a.push(["Outreach",()=>{const L=[];(m.reach||[]).forEach(r=>{if(r.log)L.push(`${r.who.split(" ·")[0]}: ${r.log}`)});(m.steps||[]).forEach(s=>{if(s.log)L.push(`${s.t.split(" (")[0]}: ${s.log}`)});return L.length?L.join(" · "):"No calls logged yet"}]);return a}
+function attestTab(id){const m=M[id],a=W.attest[id]||(W.attest[id]={});let h="";
+ if(m.meds)h+=`<div class="blk"><span class="lbl">Final medicine list</span><div class="cmp medrow"><span class="h">Drug</span><span class="h">Hospital</span><span class="h">Pharmacy</span><span class="h">PCP</span><span class="h">Yours</span>${m.meds.map((x,i)=>`<span class="row-line"></span><span class="d">${esc(x.drug.split(" (")[0])}</span><span class="v"><span>${esc(sv(x.h))}</span></span><span class="v"><span>${esc(sv(x.p))}</span></span><span class="v"><span>${esc(sv(x.c))}</span></span><span class="act">${x.agree?`<span class="tag ok">${I.check}Agree</span>`:`<label class="vh" for="med-${id}-${i}">Final for ${esc(x.drug)}</label><select id="med-${id}-${i}" data-med="${i}" data-id="${id}" class="${x.dec?"set":""}"><option value="">Decide…</option>${x.opts.map(o=>`<option ${x.dec===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`}</span>`).join("")}</div></div>`;
+ h+=`<div class="blk"><span class="lbl">Your conclusions</span>${areaList(m).map((x,i)=>`<div class="area"><label for="c-${id}-${i}"><b>${esc(x[0])}</b></label><span class="ev" data-ev="${i}">${I.doc}<span>${esc(x[1]())}</span></span><textarea id="c-${id}-${i}" data-con="${i}" data-id="${id}" placeholder="${i===0?esc(m.ph):"What did you conclude?"}">${esc(a[i]||"")}</textarea></div>`).join("")}</div><div class="sign" id="signbar"></div>`;
+ const au=W.audit.filter(x=>x.id===id).slice(0,6);if(au.length)h+=`<details class="ai"><summary>${I.doc}Audit trail (${W.audit.filter(x=>x.id===id).length})</summary><ul class="audit">${au.map(x=>`<li>${esc(x.t)} · ${esc(x.who)} · ${esc(x.text)}</li>`).join("")}</ul></details>`;
+ return h}
+function signWhy(id){const m=M[id],a=W.attest[id]||{},w=[];if(m.meds){const n=m.meds.filter(x=>!x.agree&&!x.dec).length;if(n)w.push(`${n} medicine${n>1?"s":""} open`)}if(m.dup&&!m.dup.dec)w.push("record check");const n=areaList(m).length;let miss=0;for(let i=0;i<n;i++)if(!a[i]||a[i].trim().length<8)miss++;if(miss)w.push(`${miss} conclusion${miss>1?"s":""} to write`);return w}
+function renderSign(id){const b=$("#signbar");if(!b)return;if(W.done[id]){b.innerHTML=`<span class="st ok">${I.check}Signed ${esc(W.done[id])}</span>`;return}const w=signWhy(id);b.innerHTML=`<span class="st ${w.length?"no":"ok"}">${w.length?I.alert+esc(w.join(" · ")):I.check+"Ready to sign"}</span><button class="btn btn-pri" data-act="sign" data-id="${id}" ${w.length?"disabled":""}>${I.sign}Sign</button>`}
+function renderWS(){const ws=$("#ws");if(!ws)return;const id=W.sel,m=M[id];
+ ws.innerHTML=`<div class="ws-h"><span class="av ring${tierN(m)}">${initials(m.name)}</span><div style="flex:1;min-width:0"><h2>${esc(m.name)}, ${m.age}</h2><div class="sub"><span class="tier t${tierN(m)}">Tier ${esc(m.tier)}</span><span class="tag">${esc(m.mid)}</span>${m.lang!=="English"?`<span class="tag i">${I.globe}${esc(m.lang)}</span>`:""}<span class="tag" title="${esc(m.window)}">${I.clock}${esc(W.lindaUp&&id==="linda"?"Fall reported Tue":WHEN[id])}</span></div></div></div>
+ <div class="tabs" role="tablist"><button role="tab" aria-selected="${W.sub==="brief"}" data-act="sub" data-s="brief">${I.brief}Brief</button><button role="tab" aria-selected="${W.sub==="attest"}" data-act="sub" data-s="attest">${I.sign}Attest${W.done[id]?" ✓":""}</button><button role="tab" aria-selected="${W.sub==="ask"}" data-act="sub" data-s="ask">${I.chat}Ask</button></div>
+ <div class="ws-b">${W.sub==="brief"?briefTab(id):W.sub==="ask"?askTab(id):attestTab(id)}</div>`;if(W.sub==="attest")renderSign(id)}
+function sel(id,sub){W.sel=id;W.sub=sub||"brief";save();renderQueue();renderWS();if(innerWidth<980){const ws=$("#ws");ws&&ws.scrollIntoView({behavior:reduce()?"auto":"smooth",block:"start"})}}
+
+/* ---------- ASK THE RECORD (offline engine, sources only) ---------- */
+const SUGG=["What changed since Friday?","What’s missing or stale?","Who should I call, and when?","Why is this member ranked here?","Medicine differences?","Open loops?"];
+function askTab(id){const m=M[id],c=(W.chat||(W.chat={}))[id]||[];
+ return `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center"><span class="tag w">Offline demo · answers from this record only</span><span class="muted small">AI drafts; you decide.</span></div>
+ <div class="chat" id="chat" aria-live="polite">${c.length?c.map(b=>`<div class="bub ${b.who}">${b.html}</div>`).join(""):`<div class="empty">${I.chat}<span>Ask about ${esc(m.name.split(" ")[0])}’s record</span></div>`}</div>
+ <div class="tags">${SUGG.map(q=>`<button class="btn btn-ghost btn-sm" data-act="ask-q" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+ <form class="ask" id="askform" data-id="${id}" novalidate><label class="vh" for="askin">Ask a question about this member</label><input id="askin" autocomplete="off" placeholder="e.g. What changed since Friday?"><button class="btn btn-pri" type="submit" aria-label="Ask">${I.bolt}</button></form>`}
+function answer(id,q){const m=M[id],t=q.toLowerCase(),L=a=>"<ul>"+a.map(x=>"<li>"+x+"</li>").join("")+"</ul>",src=a=>`<span class="srcs-line">Sources: ${a.join(" · ")}</span>`;
+ if(/suicid|kill (myself|himself|herself)|self[- ]harm|overdos/.test(t))return `<b>This needs a person now.</b> Follow your plan’s crisis protocol, stay on the line, and connect the member to 988 or emergency services. I can’t handle this.`;
+ if(/\b(should i|can i|increase|decrease|change the dose|prescribe|diagnos|stop taking|start taking)\b/.test(t))return `I can’t make clinical decisions. Here is what the sources say, so you can decide:`+(m.meds?L(m.meds.filter(x=>!x.agree).map(x=>`<b>${esc(x.drug)}</b>: hospital ${esc(x.h)} · pharmacy ${esc(x.p)} · PCP ${esc(x.c)}`)):L([esc(m.nba)]))+src(["HIE med list","PBM fills","PCP record"]);
+ if(/chang|new|since|happen|update/.test(t))return `Since Friday:`+L([esc(m.window)].concat(m.fresh.filter(f=>f[2]!=="stale").map(f=>`${esc(f[0])}: ${esc(f[1])}`)))+src(m.fresh.map(f=>esc(f[0])));
+ if(/miss|stale|old|gap|unknown/.test(t)){const a=m.fresh.filter(f=>f[2]!=="ok");return a.length?`Missing or stale:`+L(a.map(f=>`<b>${esc(f[0])}</b>: ${esc(f[1])}`))+`I won’t guess what these would say.`:`Nothing is missing or stale for this member right now.`}
+ if(/call|reach|phone|contact|when|time|number/.test(t)){const r=m.reach||[],st=m.steps||[];return `Reach plan:`+L(r.map(x=>`<b>${esc(x.who)}</b> ${esc(x.num)}: ${esc(x.log?("logged "+x.log):x.note)}`).concat(st.map(x=>`<b>${esc(x.t)}</b>: ${esc(x.log||x.note)}`)))+src(["Member file","PBM pharmacy record","Dialer log"])}
+ if(/why|rank|priorit|order|first/.test(t))return `Ranked here because: <b>${esc(m.why)}</b>.`+L(m.qchips.map(c=>esc(c[0])))+`Rules weigh urgency × need × reachability. You can reorder with a reason.`;
+ if(/med|drug|pill|dose|pharm/.test(t))return m.meds?`Medicine sources side by side:`+L(m.meds.map(x=>`<b>${esc(x.drug)}</b>: hospital ${esc(x.h)} · pharmacy ${esc(x.p)} · PCP ${esc(x.c)}${x.agree?" (all agree)":x.dec?` → your decision: ${esc(x.dec)}`:" (open)"}`))+src(["HIE med list 7 Nov","PBM fills","PCP record Mar"]):`No medicine conflicts are on file for ${esc(m.name.split(" ")[0])}.`;
+ if(/loop|pending|auth|referr|open|task/.test(t))return (m.loops||[]).length?`Open loops:`+L(m.loops.map(l=>`${esc(l.t)}${l.done?` · <b>done</b>: ${esc(l.done)}`:""}`)):`No open loops.`;
+ if(/summar|brief|overview|who is/.test(t))return `${esc(m.draft)}`+L([`<b>Next best action:</b> ${esc(m.nba)}`])+src([esc(m.draftSrc)]);
+ return `I can only answer from this member’s record. Try: “What changed since Friday?”, “What’s missing?”, “Who should I call?” or “Medicine differences?”`}
+function ask(id,q){q=q.trim();if(!q)return;const c=(W.chat||(W.chat={}))[id]||(W.chat[id]=[]);c.push({who:"me",html:esc(q)});
+ c.push({who:"bot",html:'<span class="spin" aria-label="Thinking"></span>'});renderWS();
+ setTimeout(()=>{c[c.length-1]={who:"bot",html:answer(id,q)};log(id,"AI",`Answered: “${q.slice(0,60)}”`);save();if(W.sel===id&&W.sub==="ask"){renderWS();const i=$("#askin");i&&i.focus()}},reduce()?60:450)}
+
+
+
+/* ---------- CASELOAD ---------- */
+function renderCase(){$("#v-caseload").innerHTML=`<div class="tiers">${[["4","Transition",6,"t4c"],["3","High",42,"t3c"],["2","Rising",0,""],["1","Stable",0,""],["0","Unknown",0,""]].map(t=>`<div class="tcard ${t[3]}"><span>Tier ${t[0]} · ${t[1]}</span><b>${t[0]==="4"?Object.values(M).filter(m=>tierN(m)==="4").length:t[0]==="3"?ST.onb.caseload-Object.values(M).filter(m=>tierN(m)==="4").length:"—"}</b><span>${t[0]>="3"?"Your nurses":t[0]==="2"?"LPN / social work":t[0]==="1"?"AI reminders":"HRA outreach"}</span></div>`).join("")}</div>
+ <div class="panel"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><h2>Members in this demo</h2><label class="vh" for="csearch">Search</label><input class="search" id="csearch" type="search" placeholder="Search name or ID"></div><div class="mlist" id="mlist"></div></div>`;drawCase("")}
+function drawCase(q){const rows=Object.entries(M).filter(([id,m])=>!q||(m.name+" "+m.mid).toLowerCase().includes(q.toLowerCase()));
+ $("#mlist").innerHTML=rows.length?rows.map(([id,m])=>`<div class="mrow"><span class="av ring${tierN(m)}">${initials(m.name)}</span><span style="min-width:0"><b>${esc(m.name)}</b><br><span class="muted small">${esc(m.mid)}</span></span><span class="tier t${tierN(m)}">Tier ${esc(m.tier)}</span>${W.done[id]?`<span class="tag ok">${I.check}Signed</span>`:`<a class="btn btn-ghost btn-sm" href="#today" data-act="open-member" data-id="${id}">Open</a>`}</div>`).join(""):`<div class="empty">${I.users}<span>No match for “${esc(q)}”</span></div>`}
+
+/* ---------- AI LANE ---------- */
+const CALL=[["ai","Hi, this is an automated assistant for your plan’s care team. Say “nurse” anytime."],["ai","Am I speaking with Linda Carter?"],["mem","Yes."],["ai","Your metformin refill is due. Say “refill” or press 1."],["mem","I can’t get to the pharmacy. I fell last night."],["sys","Red flag: “fell” → transferring to a nurse"],["sys ok","Nurse answered in 40 s · Linda → Tier 4"]];
+function renderAI(){$("#v-ai-lane").innerHTML=`<div class="gates">${[["Legal sign-off"],["96% transfers answered"],["0 missed red flags / 200"],["Metrics live"]].map(g=>`<div class="gate">${I.check}<span>${g[0]}</span></div>`).join("")}</div>
+ <div class="panel"><h2>Tuesday reminders</h2><div class="sched">${[["10:30","Linda Carter","Metformin refill"],["11:00","M-41120","Test kit return"],["11:15","M-39844","Statin refill"]].map(r=>`<div class="loop"><span class="tag i">${r[0]}</span><span class="t"><b>${r[1]}</b> · ${r[2]}</span><span class="tag">0–1 of 3 this week</span></div>`).join("")}</div><p class="muted small">Never called: dementia flag, recent stay or ED visit, no consent.</p></div>
+ <div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>Replay · Linda, Tue 10:30</h2><div class="tags"><button class="btn btn-pri btn-sm" data-act="ai-play" id="aiPlay">Play</button><button class="btn btn-ghost btn-sm" data-act="ai-reset">Reset</button></div></div><div class="transcript" id="transcript"></div></div>`;renderCall()}
+function renderCall(){const tr=$("#transcript");if(!tr)return;
+ tr.innerHTML=W.aiStep?CALL.slice(0,W.aiStep).map((l,i)=>`<p class="line ${l[0]}${i===W.aiStep-1?" enter":""}">${l[0]==="ai"?"<b>AI</b> · ":l[0]==="mem"?"<b>Linda</b> · ":""}${esc(l[1])}</p>`).join(""):`<div class="empty">${I.ai}<span>Press Play to replay the call.</span></div>`;
+ const b=$("#aiPlay");b.textContent=W.aiStep===0?"Play":W.aiStep<CALL.length?"Next":"Done";b.disabled=W.aiStep>=CALL.length;
+ if(W.aiStep>=CALL.length&&!W.lindaUp){W.lindaUp=true;const m=M.linda;Object.assign(m,{tier:"4",tc:"t4",review:false,qchips:[["Fall on AI call","w"],["Nurse in 40 s","i"]],window:"Tue 10:32 · fall reported on AI call",nba:"Assess the fall → same-day PCP or urgent care → home-safety check"});m.fresh.unshift(["AI call","Tue 10:32","ok"]);W.queue=["linda"].concat(W.queue.filter(x=>x!=="linda"));delete W.done.linda;log("linda","AI","Red flag “fell”; warm transfer");buzz(15);toast("Linda moved to Tier 4, top of your queue")}save()}
+
+/* ---------- PROFILE ---------- */
+function renderProfile(){const u=ST.user,O=ST.onb;$("#v-profile").innerHTML=`<div class="panel"><div class="prof-head"><span class="av">${esc(initials(u.name))}</span><div><h2 style="font-size:20px">${esc(u.name)}</h2><p class="muted" style="overflow-wrap:anywhere">${esc(u.email)}</p></div></div>
+ <dl class="kv"><dt>Role</dt><dd>${esc(ROLE(O.role))}</dd><dt>Health plan</dt><dd>${esc(u.org)}</dd><dt>Program</dt><dd>${esc(O.program)}</dd><dt>Caseload</dt><dd>${O.caseload} members</dd><dt>Signed in with</dt><dd>${u.via==="google"?"Google":"Email code"}</dd><dt>Member since</dt><dd>${esc(u.since||"Nov 2026")}</dd></dl></div>
+ <div class="panel"><h2>Name</h2><form id="pform" novalidate style="display:flex;gap:8px;flex-wrap:wrap"><label class="vh" for="pname">Display name</label><input id="pname" class="search" style="max-width:320px" value="${esc(u.name)}" autocomplete="name"><button class="btn btn-sec" type="submit">Save</button></form></div>
+ <div class="panel"><h2>Conversations a day</h2><div class="cap" role="radiogroup" aria-label="Conversations per day">${[2,3,4,5,6].map(n=>`<button role="radio" aria-checked="${O.cap===n}" data-act="pcap" data-v="${n}">${n}</button>`).join("")}</div></div>
+ <div class="panel"><h2>Demo</h2><div class="tags"><button class="btn btn-ghost" data-act="replay-onb">Replay setup</button><button class="btn btn-ghost" data-act="reset-demo">Reset members</button><button class="btn btn-ghost" data-act="logout">${I.out}Sign out</button></div></div>`}
+
+/* ---------- events ---------- */
+function testSources(only){const L=only!=null?[ST.src[only]]:ST.src.filter(x=>x.on);L.forEach(x=>x.testing=true);paintSrc();
+ setTimeout(()=>{L.forEach(x=>{x.testing=false;if(only!=null||ST.onb.tested){x.ok=true;x.age="just now"}});ST.onb.tested=true;save();paintSrc();if(!$("#app").hidden)renderSrcPill();if(only!=null)toast(`${ST.src[only].k} connected`)},reduce()?100:900)}
+function paintSrc(){if(!$("#onb").hidden){ST.src.forEach((x,i)=>{const e=$("#st-"+i);if(e)e.innerHTML=srcStatus(x,i)});const b=document.querySelector('[data-act="src-test"]');if(b)b.textContent=ST.onb.tested?"Test again":"Test connections"}else if(!$("#layer").hidden&&document.querySelector(".sheet"))sheetSources()}
+document.addEventListener("submit",e=>{const f=e.target;e.preventDefault();const A=authStep;
+ if(f.id==="askform"){ask(f.dataset.id,$("#askin").value);return}
+ if(f.id==="pform"){ST.user.name=$("#pname").value.trim()||ST.user.name;save();renderApp("profile");toast("Saved");return}
+ A.err={};
+ if(f.id==="lform"){A.email=$("#lemail").value.trim();if(!EMAIL.test(A.email))A.err.lemail="Enter an email like name@gmail.com";else A.phase="code";renderAuth()}
+ if(f.id==="sform"){A.name=$("#sname").value.trim();A.email=$("#semail").value.trim();A.terms=$("#sterms").checked;if(A.name.length<2)A.err.sname="Enter your name";if(!EMAIL.test(A.email))A.err.semail="Enter an email like name@gmail.com";if(!A.terms)A.err.sterms="Please confirm";if(!Object.keys(A.err).length)A.phase="code";renderAuth()}
+ if(f.id==="gform"){A.email=$("#gemail").value.trim();if(!EMAIL.test(A.email)){A.err.gemail="Enter an address like name@gmail.com";renderAuth()}else signIn(A.email,A.mode==="signup"?A.name:"","google")}
+ if(f.id==="cform"){const v=$("#code").value.replace(/\s/g,"");if(v!=="246810"){A.err.code=v.length<6?"Enter all 6 digits":"Wrong code. Try 246810";renderAuth()}else signIn(A.email,A.name,"email")}
+});
+document.addEventListener("click",e=>{
+ const t=e.target.closest("[data-act]");if(!t)return;const a=t.dataset.act,id=t.dataset.id,m=M[id];
+ switch(a){
+ case "layer-close":closeLayer();break;
+ case "to-profile":closeLayer();go("profile");break;
+ case "google":authStep.phase="google";authStep.err={};renderAuth();break;
+ case "auth-back":authStep.phase="form";authStep.err={};renderAuth();break;
+ case "role":ST.onb.role=t.dataset.v;save();document.querySelectorAll('[data-act="role"]').forEach(b=>b.setAttribute("aria-checked",b.dataset.v===ST.onb.role));onbNextState();break;
+ case "cap":ST.onb.cap=+t.dataset.v;save();document.querySelectorAll('[data-act="cap"]').forEach(b=>b.setAttribute("aria-checked",+b.dataset.v===ST.onb.cap));break;
+ case "pcap":ST.onb.cap=+t.dataset.v;save();document.querySelectorAll('[data-act="pcap"]').forEach(b=>b.setAttribute("aria-checked",+b.dataset.v===ST.onb.cap));toast(`Queue cut at ${ST.onb.cap}`);break;
+ case "onb-back":ST.onb.step=Math.max(0,ST.onb.step-1);save();renderOnb();break;
+ case "onb-next":{const O=ST.onb;if(O.step===1)O.program=$("#oprog").value;if(O.step<4){O.step++;save();renderOnb();window.scrollTo(0,0)}else{O.done=true;save();buzz(15);toast(`Welcome, ${first()}`);redirect("today")}break}
+ case "src-tog":{const x=ST.src[+t.dataset.i];x.on=!x.on;save();t.setAttribute("aria-checked",x.on);const st=$("#st-"+t.dataset.i);if(st)st.innerHTML=srcStatus(x,+t.dataset.i);onbNextState();break}
+ case "src-test":testSources();break;
+ case "src-retry":testSources(+t.dataset.i);break;
+ case "logout":closeLayer();ST.user=null;save();authStep={mode:"login",phase:"form",email:"",name:"",org:"",err:{}};lastView="";toast("Signed out");redirect("login");break;
+ case "replay-onb":ST.onb.done=false;ST.onb.step=0;lastOnbStep=-1;save();redirect("onboarding");break;
+ case "reset-demo":{const u=ST.user,o=ST.onb,ui=ST.ui;ST=fresh();ST.user=u;ST.onb=o;ST.ui=ui;M=ST.M;W=ST.W;loadedToday=false;save();toast("Members reset");go("today");break}
+ case "open-member":W.sel=id;W.sub="brief";save();break;
+ case "pick":if(e.target.closest(".qmove,.override"))return;sel(id,W.done[id]?"attest":"brief");break;
+ case "sub":W.sub=t.dataset.s;save();renderWS();break;
+ case "go-attest":sel(id,"attest");break;
+ case "mv":override={id,d:+t.dataset.d};renderQueue();setTimeout(()=>{const s=$("#ovr");s&&s.focus()},0);break;
+ case "mv-cancel":override=null;renderQueue();break;
+ case "mv-ok":{const r=$("#ovr").value;if(!r){toast("Pick a reason");return}const q=W.queue,i=q.indexOf(override.id),j=i+override.d;if(j>=0&&j<q.length)[q[i],q[j]]=[q[j],q[i]];W.moved[override.id]=r;log(override.id,"You",`Moved ${override.d<0?"up":"down"}: ${r}`);override=null;save();renderQueue();toast("Moved · never scored");break}
+ case "call":{const r=m.reach.find(x=>x.id===t.dataset.r);r.log=t.dataset.o;tick(r.log==="Reached"?12:5);r.at=(id==="harold"&&r.id==="susan"&&r.log==="Reached")?"6:40 pm":clock();log(id,"You",`${r.who.split(" ·")[0]}: ${r.log}`);if(r.log==="Reached"){W.convos++;buzz(15);toast("Conversation logged")}else toast(`${r.log} logged`);save();renderWS();break}
+ case "find":{const s=m.steps.find(x=>x.id===t.dataset.r);s.log=t.dataset.o;tick(5);s.at=clock();log(id,"You",`${s.t.split(" (")[0]}: ${s.log}`);if(s.log==="Reached"){W.convos++;m.fresh=m.fresh.map(f=>f[0]==="Home phone"?["Home phone","Updated","ok"]:f);m.qchips=[["Reached","i"]];buzz(15);toast("Reached · number updated")}else toast(s.id==="chw"?"CHW visit requested":"Logged");save();renderWS();renderQueue();break}
+ case "dup":m.dup.dec=t.dataset.o;tick(2);log(id,"You",t.dataset.o);save();renderWS();break;
+ case "tier":m.tierchg.dec=t.dataset.o;if(t.dataset.o.includes("3"))m.tier="3";else m.tier="2";tick(2);log(id,"You",t.dataset.o);save();renderQueue();renderWS();break;
+ case "step":m.step.dec=t.dataset.o;log(id,"You",t.dataset.o);save();renderWS();break;
+ case "auth":m.auth.sent="sent";m.fresh=m.fresh.map(f=>f[0]==="Caregiver authorization"?["Caregiver form","Sent Mon","stale"]:f);log(id,"You","Authorization form sent");save();renderWS();toast("Form sent");break;
+ case "loop":{const l=m.loops[+t.dataset.i];if(l.go){go(l.go);return}l.done=l.doneTxt;tick(3);log(id,"You",l.doneTxt);save();renderWS();toast(l.doneTxt);break}
+ case "note":toast(t.dataset.t);break;
+ case "ask-q":ask(W.sel,t.dataset.q);break;
+ case "sign":{if(signWhy(id).length)return;tick(4);W.done[id]="at "+clock();log(id,"You","Note signed");save();buzz(18);renderQueue();renderWS();const sb=$("#signbar");sb&&sb.classList.add("pop");toast(`${m.name}: signed`);break}
+ case "ai-play":W.aiStep=Math.min(CALL.length,W.aiStep+1);renderCall();break;
+ case "ai-reset":W.aiStep=0;save();renderCall();break;
+ }
+});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("qrow")){e.preventDefault();e.target.click()}if(e.key==="Escape")closeLayer()});
+document.addEventListener("change",e=>{const s=e.target;
+ if(s.dataset&&s.dataset.med!==undefined){const m=M[s.dataset.id],x=m.meds[+s.dataset.med];x.dec=s.value;s.classList.toggle("set",!!s.value);if(x.dec){tick(2);log(s.dataset.id,"You",`${x.drug}: ${x.dec}`)}const ev=document.querySelector('[data-ev="0"] span');if(ev)ev.textContent=areaList(m)[0][1]();save();renderSign(s.dataset.id)}
+ if(s.dataset&&s.dataset.rule!==undefined){ST.onb.rules[+s.dataset.rule]=s.checked;save();onbNextState()}
+ if(s.id==="oprog"){ST.onb.program=s.value;save()}});
+document.addEventListener("input",e=>{const s=e.target;
+ if(s.dataset&&s.dataset.con!==undefined){(W.attest[s.dataset.id]||(W.attest[s.dataset.id]={}))[+s.dataset.con]=s.value;save();renderSign(s.dataset.id)}
+ if(s.id==="ocase"){const v=parseInt(s.value,10);ST.onb.caseload=isNaN(v)?0:v;save();onbNextState()}
+ if(s.id==="csearch")drawCase(s.value.trim());
+ if(s.id==="code")s.value=s.value.replace(/\D/g,"").slice(0,6)});
+$("#railBtn").addEventListener("click",()=>{ST.ui.rail=!railWanted();save();applyRail()});
+$("#srcPill").addEventListener("click",sheetSources);
+$("#topAv").addEventListener("click",e=>openProfile(e.currentTarget));
+$("#meBtn").addEventListener("click",e=>openProfile(e.currentTarget));
+route();
+})();
+</script>

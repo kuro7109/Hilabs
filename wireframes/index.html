@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Workbench · Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#F5F8FC; --card:#FFFFFF; --ink:#1F2937; --muted:#5B6478; --navy:#2E4A86; --blue:#2069F0; --line:#D3DEEE; --wash:#EAF3FF; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Outfit', Arial, sans-serif; }
+  header { background:var(--card); border-bottom:1px solid var(--line); }
+  .wrap { max-width:1200px; margin:0 auto; padding-block:28px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .kicker { font-size:13px; font-weight:700; letter-spacing:.12em; color:var(--blue); text-transform:uppercase; margin:0 0 6px; }
+  h1 { font-size:clamp(28px, 4vw, 40px); margin:0 0 8px; color:#0F1B33; text-wrap:balance; }
+  .lede { font-size:18px; color:var(--muted); margin:0 0 16px; max-width:65ch; }
+  .btn { display:inline-block; background:var(--blue); color:#fff; text-decoration:none; font-weight:600; padding:10px 18px; border-radius:8px; }
+  .btn.ghost { background:var(--wash); color:var(--navy); margin-left:8px; }
+  .grid { display:grid; gap:24px; }
+  figure { margin:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  figure img { display:block; width:100%; height:auto; border-bottom:1px solid var(--line); }
+  figcaption { padding:16px 20px; }
+  figcaption b { display:block; font-size:20px; color:var(--navy); margin-bottom:4px; }
+  figcaption span { color:var(--muted); font-size:16px; }
+  .tag { display:inline-block; font-size:13px; font-weight:700; color:var(--navy); background:var(--wash); border-radius:6px; padding:2px 8px; margin-right:6px; }
+  footer { color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <p class="kicker">HiLabs APM caselet · Wireframes</p>
+  <h1>Case Workbench: key screens</h1>
+  <p class="lede">Screens from the working prototype, shown with Maria’s Monday and five fictional patients. All names, IDs and phone numbers are made up.</p>
+  <a class="btn" href="/">Open the live prototype</a><a class="btn ghost" href="#today">Jump to screens</a>
+</div></header>
+<main class="wrap grid">
+  <figure id="today"><img src="img/today.webp" alt="Today's Queue with Harold Lee's Member Brief open" loading="lazy"><figcaption><b>1 · Today’s Queue + Member Brief</b><span><span class="tag">Harold</span>Ranked list cut at her capacity; every fact shows its source and age; medicine conflicts side by side; reach plan for his daughter.</span></figcaption></figure>
+  <figure id="find"><img src="img/evelyn.webp" alt="Evelyn Price's Find plan" loading="lazy"><figcaption><b>2 · Find task</b><span><span class="tag">Evelyn</span>Dead home phone → pharmacy-listed mobile → rehab planner → home visit. Two member IDs flagged for review, never auto-merged.</span></figcaption></figure>
+  <figure id="attest"><img src="img/attest.webp" alt="Reconcile and Attest screen" loading="lazy"><figcaption><b>3 · Reconcile &amp; Attest</b><span><span class="tag">Harold</span>One signed medicine list. Software fills the facts; Maria picks each dose and writes her own conclusion before signing.</span></figcaption></figure>
+  <figure id="ask"><img src="img/ask.webp" alt="Ask panel answering a question with citations" loading="lazy"><figcaption><b>4 · Ask</b><span>Questions about one member, answered only from the facts on file, with a source on every line.</span></figcaption></figure>
+  <figure id="caseload"><img src="img/caseload.webp" alt="Caseload grouped by tier" loading="lazy"><figcaption><b>5 · Caseload</b><span><span class="tag">Walter</span><span class="tag">Linda</span>All 48 cases by tier and need; rising risk moves members up, cost alone does not.</span></figcaption></figure>
+  <figure id="ai-lane"><img src="img/ai-call.webp" alt="Automated reminder lane with a live call transcript" loading="lazy"><figcaption><b>6 · Automated reminder lane</b><span><span class="tag">Linda</span>Scripted refill reminders for stable members; “I fell” hands the call to a nurse in seconds.</span></figcaption></figure>
+  <footer>Prototype and screens: synthetic data only. Built for the HiLabs APM caselet, 2026–27.</footer>
+</main>
+</body>
+</html>
